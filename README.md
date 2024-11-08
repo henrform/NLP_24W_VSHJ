@@ -9,6 +9,6 @@ Note: The `data` folder contains 2 datasets: one with individual labels from 3 a
 A detailed exploratory analysis, including text normalization steps and explanations for the preprocessing decisions, is documented in `milestone 1/milestone_1.ipynb`. The entire preprocessing workflow, including conclusions from the analysis and conversion to the standard CoNLL-U format, is implemented in the `TextProcessingPipeline` class, located in the script `milestone 1/pipeline_connl.py`. The dataset, exported in the standard format and split into training, test, and validation sets, is available in the `milestone 1` folder.
 
 Outlined below is a diagram of the preprocessing steps implemented in the `TextProcessingPipeline` class.
-![Text Processing Pipeline](assets/preprocessing_pipeline.png)
+<img src="assets/preprocessing_pipeline.png" width="80%"/>
 
 #### Milestone 2
