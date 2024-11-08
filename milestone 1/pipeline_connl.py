@@ -40,14 +40,13 @@ class TextProcessingPipeline:
 
     @staticmethod
     def remove_user_mentions_and_urls(text):
-        """Remove user mentions and URLs from text."""
-        text = re.sub(r'\[USER\]', '', text)
-        text = re.sub(r'http\S+', '', text)
+        """Remove user mentions and URLs and from text."""
+        text = re.sub(r'\[[A-Z]+\]', '', text)
         return text
 
     @staticmethod
     def clean_text(text):
-        """Clean text by converting to lowercase and removing special characters."""
+        """Clean text by converting to lowercase"""
         text = text.lower()
         text = re.sub(r'[^\w\s.,!?\'"]+', '', text)
         return text
@@ -56,7 +55,7 @@ class TextProcessingPipeline:
     def remove_stopwords(text):
         """Remove stopwords from text."""
         words = nltk.word_tokenize(text)
-        filtered_words = [word for word in words if word not in stopwords_set and re.match(r'\w', word)]
+        filtered_words = [word for word in words if word not in stopwords_set]
         return ' '.join(filtered_words)
 
     def preprocess_text(self, text):
@@ -70,11 +69,13 @@ class TextProcessingPipeline:
     def sentence_to_conllu_format(self, row):
         """Convert a sentence row to CoNLL-U format."""
         text = self.preprocess_text(row['text'])
+        sentence_id = row['rewire_id']
         label_sexist = row['label_sexist']
 
         doc = nlp(text)
 
-        conllu_format = [f"# label_sexist = {label_sexist}"]
+        conllu_format = [f"# sent_id = {sentence_id}",
+                         f"# label_sexist = {label_sexist}"]
 
         for sentence in CoNLL.convert_dict(doc.to_dict()):
             for token in sentence:
@@ -92,22 +93,23 @@ class TextProcessingPipeline:
         logger.info("File saved: %s", output_file)
 
 
-#Instantiating the pipeline
+# Instantiating the pipeline
 pipeline = TextProcessingPipeline()
 
-#Splitting the data based on 'split' column
+# Splitting the data based on 'split' column
 data_agg_train = df[df['split'] == 'train'].drop('split', axis=1)
 data_agg_dev = df[df['split'] == 'dev'].drop('split', axis=1)
 data_agg_test = df[df['split'] == 'test'].drop('split', axis=1)
 
-#Logging the number of samples in each split
+# Logging the number of samples in each split
 logger.info("Number of training samples: %d", data_agg_train.shape[0])
 logger.info("Number of validation samples: %d", data_agg_dev.shape[0])
 logger.info("Number of test samples: %d", data_agg_test.shape[0])
 
-#Writing each split to a separate CoNLL-U file
+# Writing each split to a separate CoNLL-U file
 pipeline.write_to_conllu(data_agg_train, 'train_sexism_dataset_conllu.conllu')
 pipeline.write_to_conllu(data_agg_dev, 'dev_sexism_dataset_conllu.conllu')
 pipeline.write_to_conllu(data_agg_test, 'test_sexism_dataset_conllu.conllu')
 
-logger.info("Preprocessed datasets saved as 'train_sexism_dataset_conllu.conllu', 'dev_sexism_dataset_conllu.conllu', and 'test_sexism_dataset_conllu.conllu'.")
+logger.info(
+    "Preprocessed datasets saved as 'train_sexism_dataset_conllu.conllu', 'dev_sexism_dataset_conllu.conllu', and 'test_sexism_dataset_conllu.conllu'.")
