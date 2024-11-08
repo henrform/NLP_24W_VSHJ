@@ -48,13 +48,14 @@ class TextProcessingPipeline:
     def clean_text(text):
         """Clean text by converting to lowercase"""
         text = text.lower()
+        text = re.sub(r'[^\w\s.,!?\'"]+', '', text)
         return text
 
     @staticmethod
     def remove_stopwords(text):
         """Remove stopwords from text."""
         words = nltk.word_tokenize(text)
-        filtered_words = [word for word in words if word not in stopwords_set and re.match(r'\w', word)]
+        filtered_words = [word for word in words if word not in stopwords_set]
         return ' '.join(filtered_words)
 
     def preprocess_text(self, text):
