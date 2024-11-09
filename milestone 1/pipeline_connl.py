@@ -27,7 +27,7 @@ stanza.download('en')
 nlp = stanza.Pipeline('en', processors='tokenize,lemma,pos,depparse')
 
 # Load dataset
-df = pd.read_csv('/data/edos_labelled_aggregated.csv')
+df = pd.read_csv('../data/edos_labelled_aggregated.csv')
 
 
 class TextProcessingPipeline:
