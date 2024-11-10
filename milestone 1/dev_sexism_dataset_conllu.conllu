@@ -21368,7 +21368,7 @@
 
 # sent_id = sexism2022_english-13787
 # label_sexist = not sexist
-1	mudslime	mudslime	ADJ	JJ	Degree=Pos	2	amod	_	start_char=0|end_char=8
+1	mudslime	mudslime	NOUN	NN	Number=Sing	2	compound	_	start_char=0|end_char=8
 2	father	father	NOUN	NN	Number=Sing	3	nsubj	_	start_char=9|end_char=15
 3	batters	batter	VERB	VBZ	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	0	root	_	start_char=16|end_char=23
 4	five	five	NUM	CD	NumForm=Word|NumType=Card	5	nummod	_	start_char=24|end_char=28
