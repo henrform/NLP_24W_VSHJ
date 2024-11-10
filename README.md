@@ -3,6 +3,8 @@ Topic: Detection of Online Sexism
 
 Students: Sofija Milicic, Henry Werner Forman, Vanja Draganic, Johannes Pfennigbauer
 
+We are using Python 3.10. The necessary packages can be found in `requirements.txt`.
+
 #### Milestone 1
 Note: The `data` folder contains 2 datasets: one with individual labels from 3 annotators per comment and another aggregated version, where 2/3 agreements were resolved by the dataset creators. For preprocessing, we used only the aggregated dataset to avoid redundant processing. The presence of 2/3 agreements will be revisited during the error analysis in milestone 2.
 

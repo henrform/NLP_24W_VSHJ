@@ -1,0 +1,5 @@
+emoji==2.14.0
+nltk==3.8.1
+pandas==2.2.3
+stanza==1.9.2
+tqdm==4.67.0
