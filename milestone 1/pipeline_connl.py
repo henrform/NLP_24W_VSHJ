@@ -107,9 +107,9 @@ logger.info("Number of validation samples: %d", data_agg_dev.shape[0])
 logger.info("Number of test samples: %d", data_agg_test.shape[0])
 
 # Writing each split to a separate CoNLL-U file
-pipeline.write_to_conllu(data_agg_train, 'train_sexism_dataset_conllu.conllu')
-pipeline.write_to_conllu(data_agg_dev, 'dev_sexism_dataset_conllu.conllu')
-pipeline.write_to_conllu(data_agg_test, 'test_sexism_dataset_conllu.conllu')
+pipeline.write_to_conllu(data_agg_train, '../data/processed/train_sexism_dataset_conllu.conllu')
+pipeline.write_to_conllu(data_agg_dev, '../data/processed/dev_sexism_dataset_conllu.conllu')
+pipeline.write_to_conllu(data_agg_test, '../data/processed/test_sexism_dataset_conllu.conllu')
 
 logger.info(
     "Preprocessed datasets saved as 'train_sexism_dataset_conllu.conllu', 'dev_sexism_dataset_conllu.conllu', and 'test_sexism_dataset_conllu.conllu'.")
