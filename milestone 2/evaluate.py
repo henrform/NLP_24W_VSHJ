@@ -46,7 +46,6 @@ class Evaluation:
         Plot confusion matrices for train+dev and test sets.
         """
         cm_train_dev = confusion_matrix(y_train_dev, y_train_dev_pred) # conf matrix for train+dev
-        print(cm_train_dev)
         cm_test = confusion_matrix(y_test, y_test_pred) # conf matrix for test
 
         fig, axes = plt.subplots(1, 2, figsize=(8, 4))
