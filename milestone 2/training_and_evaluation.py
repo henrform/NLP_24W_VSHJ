@@ -289,8 +289,8 @@ def test_new_input_sentence():
 
 
 if __name__ == '__main__':
-    train_path = '/home/vanja98/Desktop/NLP_new/NLP_24W_VSHJ/data/processed/train_sexism_dataset_conllu.conllu'
-    test_path = '/home/vanja98/Desktop/NLP_new/NLP_24W_VSHJ/data/processed/test_sexism_dataset_conllu.conllu'
+    train_path = '/data/processed/train_sexism_dataset_conllu.conllu'
+    test_path = '/data/processed/test_sexism_dataset_conllu.conllu'
 
 
     train_df, test_df = load_and_prepare_data(train_path,test_path)
