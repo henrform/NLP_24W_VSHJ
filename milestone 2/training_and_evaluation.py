@@ -190,13 +190,9 @@ def regex_classifier(texts):
     Rule-based classifier using regular expressions.
     """
     sexist_patterns = [
-        r'\bmake me a sandwich\b',
-        r'\bget back in the kitchen\b',
         r'\bwomen can\'t\b',
         r'\bgirls can\'t\b',
         r'\bwomen should\b',
-        r'\bwomen are\b',
-        r'\bgirls are\b',
         r'\bbitch(es)?\b',
         r'\bslut(s)?\b',
         r'\bwhore(s)?\b'
