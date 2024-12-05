@@ -33,8 +33,8 @@ class Evaluation:
         """
         accuracy = accuracy_score(y_true, y_pred)
         balanced_accuracy = balanced_accuracy_score(y_true, y_pred)
-        precision = precision_score(y_true, y_pred)
-        recall = recall_score(y_true, y_pred)
+        precision = precision_score(y_true, y_pred, pos_label='sexist')
+        recall = recall_score(y_true, y_pred, pos_label='sexist')
 
         print(f"accuracy: {accuracy:.4f}")
         print(f"balanced accuracy: {balanced_accuracy:.4f}")
