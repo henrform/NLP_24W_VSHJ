@@ -1,4 +1,6 @@
 import conllu
+from sklearn.feature_extraction.text import CountVectorizer
+from scipy.sparse import vstack
 
 class ImportPreprocess:
     def __init__(self, folder_path="../data/processed/"):
@@ -12,7 +14,7 @@ class ImportPreprocess:
         Importing and parsing the train, dev and test datasets from CoNLL-U format 
         (formed in milestone 1).
 
-        Returns:
+        Updates:
         X_train, y_train, X_dev, y_dev, X_test, y_test
             - X_* contains tokenized sentences
             - y_* contains the labels ('sexist'/'not sexist')
@@ -45,6 +47,21 @@ class ImportPreprocess:
 
     def concatenate_train_dev(self):
         return self.X_train + self.X_dev, self.y_train + self.y_dev
+    
+    def create_bow_representation(self, max_features=300):
+        """
+        Transform tokenized sentences into bag of words (BoW) representation.
+        'CountVectorizer' is applied, but without any preprocessing (already done in milestone 1).
+        Due to high number of unique tokens, only the 'max_features' most frequent tokens are considered.
+        """
+        vectorizer = CountVectorizer(analyzer=lambda x: x, token_pattern=None, max_features=max_features)
+        X_train_bow = vectorizer.fit_transform(self.X_train)
+        X_dev_bow = vectorizer.transform(self.X_dev)
+        X_test_bow = vectorizer.transform(self.X_test)
 
+        X_train_dev_bow = vstack([X_train_bow, X_dev_bow]) # for final evaluation purpose
+
+        return X_train_bow, X_dev_bow, X_test_bow, X_train_dev_bow, vectorizer.get_feature_names_out()
+    
     def pad_token_sequences(self):
         raise NotImplementedError()
