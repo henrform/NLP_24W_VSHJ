@@ -9,7 +9,7 @@ class Evaluation:
         """
         self.model = model
 
-    def evaluate(self, X_train_dev, y_train_dev, X_test, y_test, plot_confusion=True):
+    def evaluate(self, X_train_dev, y_train_dev, X_test, y_test, plot_confusion=True, model_name=""):
         """
         Evaluate the model on train+dev and test sets.
         Metrics: accuracy, balanced accuracy, precision, recall.
@@ -24,7 +24,7 @@ class Evaluation:
         self.calculate_print_metrics(y_test, y_test_pred)
 
         if plot_confusion:
-            self.plot_confusion_matrices(y_train_dev, y_train_dev_pred, y_test, y_test_pred)
+            self.plot_confusion_matrices(y_train_dev, y_train_dev_pred, y_test, y_test_pred, model_name)
 
 
     def calculate_print_metrics(self, y_true, y_pred):
@@ -41,7 +41,7 @@ class Evaluation:
         print(f"precision: {precision:.4f}")
         print(f"recall: {recall:.4f}")
 
-    def plot_confusion_matrices(self, y_train_dev, y_train_dev_pred, y_test, y_test_pred):
+    def plot_confusion_matrices(self, y_train_dev, y_train_dev_pred, y_test, y_test_pred, model_name):
         """
         Plot confusion matrices for train+dev and test sets.
         """
@@ -52,13 +52,13 @@ class Evaluation:
 
         sns.heatmap(cm_train_dev, annot=True, fmt='d', cmap='Blues', cbar=False, ax=axes[0],
                     xticklabels=["0 - not sexist", "1 - sexist"], yticklabels=["0 - not sexist", "1 - sexist"])
-        axes[0].set_title('Confusion matrix: train+dev')
+        axes[0].set_title(f'{model_name}, Confusion matrix: train+dev')
         axes[0].set_xlabel('predicted')
         axes[0].set_ylabel('actual')
 
         sns.heatmap(cm_test, annot=True, fmt='d', cmap='Blues', cbar=False, ax=axes[1],
                     xticklabels=["0 - not sexist", "1 - sexist"], yticklabels=["0 - not sexist", "1 - sexist"])
-        axes[1].set_title('Confusion matrix: test')
+        axes[1].set_title(f'{model_name}, Confusion matrix: test')
         axes[1].set_xlabel('predicted')
         axes[1].set_ylabel('actual')
 
