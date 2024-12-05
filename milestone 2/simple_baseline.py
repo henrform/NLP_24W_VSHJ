@@ -11,15 +11,15 @@ class MajorityClassClassifier:
         count_1 = 0
         
         for label in y_train_dev:
-            if label == "not sexist":
+            if label == 0:
                 count_0 += 1
-            elif label == "sexist":
+            elif label == 1:
                 count_1 += 1
         
         if count_1 > count_0:
-            self.majority_class = "sexist"
+            self.majority_class = 1
         else:
-            self.majority_class = "not sexist"
+            self.majority_class = 0
 
     def predict(self, X_test):
         """
