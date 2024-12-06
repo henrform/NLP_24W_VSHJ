@@ -42,6 +42,13 @@ class ImportPreprocess:
         self.y_train = [1 if label == "sexist" else 0 for label in self.y_train]
         self.y_dev = [1 if label == "sexist" else 0 for label in self.y_dev]
         self.y_test = [1 if label == "sexist" else 0 for label in self.y_test]
+        
+    def convert_class_labels_back(self):
+        """
+        1 -> 'sexist', 0 -> 'not sexist'
+        """
+        self.y_train = ["sexist" if label == 1 else "not sexist" for label in self.y_train]
+        self.y_dev = ["sexist" if label == 1 else "not sexist" for label in self.y_dev]
 
     def concatenate_train_dev(self):
         return self.X_train + self.X_dev, self.y_train + self.y_dev
