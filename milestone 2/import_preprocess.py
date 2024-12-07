@@ -2,6 +2,21 @@ import conllu
 from sklearn.feature_extraction.text import CountVectorizer
 from scipy.sparse import vstack
 
+
+def convert_labels_to_string(y):
+    """
+    1 -> 'sexist, 0 -> 'not sexist'
+    """
+    return ["sexist" if label == 1 else "not sexist" for label in y]
+
+
+def convert_labels_to_int(y):
+    """
+    'sexist' -> 1, 'not sexist' -> 0
+    """
+    return [1 if label == "sexist" else 0 for label in y]
+
+
 class ImportPreprocess:
     def __init__(self, folder_path="../data/processed/"):
         self.folder_path = folder_path
@@ -36,19 +51,6 @@ class ImportPreprocess:
         self.X_train, self.y_train = datasets['train']['X'], datasets['train']['y']
         self.X_val, self.y_val = datasets['dev']['X'], datasets['dev']['y']
         self.X_test, self.y_test = datasets['test']['X'], datasets['test']['y']
-    
-    def convert_labels_to_int(self, y):
-        """
-        'sexist' -> 1, 'not sexist' -> 0
-        """
-        return [1 if label == "sexist" else 0 for label in y]
-
-    def convert_labels_to_string(self, y):
-        """
-        1 -> 'sexist, 0 -> 'not sexist'
-        """
-        return ["sexist" if label == 1 else "not sexist" for label in y]
-
 
     def concatenate_train_val(self):
         return self.X_train + self.X_val, self.y_train + self.y_val
