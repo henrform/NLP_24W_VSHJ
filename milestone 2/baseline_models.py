@@ -1,9 +1,89 @@
 import xgboost as xgb
 from sklearn.naive_bayes import MultinomialNB
 from import_preprocess import convert_labels_to_int, convert_labels_to_string
+from evaluate import Evaluation
+
+from sklearn.metrics import accuracy_score, balanced_accuracy_score, precision_score, recall_score, confusion_matrix
+import seaborn as sns
+import matplotlib.pyplot as plt
+from abc import ABC, abstractmethod
 
 
-class XGBoostClassifier:
+class ClassificationModel(ABC):
+    @abstractmethod
+    def train(self, X_train, y_train, X_val, y_val):
+        pass
+
+    @abstractmethod
+    def predict(self, X):
+        pass
+
+    def evaluate(self, X_dict, y_true_list, plot_confusion=True, model_name=""):
+        """
+        Evaluate the model on train+dev and test sets.
+        Metrics: accuracy, balanced accuracy, precision, recall.
+        """
+        y_pred_list = [self.predict(X) for X in X_dict.values()]
+        # y_train_dev_pred = self.predict(X_train_dev)
+        # y_test_pred = self.predict(X_test)
+
+        dataset_names = []
+        print("#" * 40 + "\n")
+        for i, name in enumerate(X_dict.keys()):
+            dataset_names.append(name)
+            print(f"Metrics for {name}")
+            self._calculate_print_metrics(y_true_list[i], y_pred_list[i])
+            print("\n" + "#" * 40 + "\n")
+
+        # print("Metrics for TRAIN+DEV set")
+        # self.calculate_print_metrics(y_train_dev, y_train_dev_pred)
+        # print("#" * 40)
+        # print("\nMetrics for TEST set")
+        # self.calculate_print_metrics(y_test, y_test_pred)
+
+        if plot_confusion:
+            self._plot_confusion_matrices(y_true_list, y_pred_list, dataset_names, model_name)
+
+    def _calculate_print_metrics(self, y_true, y_pred):
+        """
+        Calculate and print accuracy, balanced accuracy, precision and recall.
+        """
+        accuracy = accuracy_score(y_true, y_pred)
+        balanced_accuracy = balanced_accuracy_score(y_true, y_pred)
+        precision = precision_score(y_true, y_pred, zero_division=0.0, pos_label='sexist')
+        # precision = precision_score(y_true, y_pred)
+        recall = recall_score(y_true, y_pred, zero_division=0.0, pos_label='sexist')
+        # recall = recall_score(y_true, y_pred)
+
+        print(f"accuracy: {accuracy:.4f}")
+        print(f"balanced accuracy: {balanced_accuracy:.4f}")
+        print(f"precision: {precision:.4f}")
+        print(f"recall: {recall:.4f}")
+
+    def _plot_confusion_matrices(self, y_true_list, y_pred_list, dataset_names, model_name):
+        """
+        Plot confusion matrices for train+dev and test sets.
+        """
+        num_datasets = len(dataset_names)
+        fig, axes = plt.subplots(1, num_datasets, figsize=(4*num_datasets, 4))
+
+        for i, pair in enumerate(zip(dataset_names, y_true_list, y_pred_list)):
+            name, y_true, y_pred = pair
+            cm = confusion_matrix(y_true, y_pred)
+
+            plt.subplot(1, num_datasets, i + 1)
+            sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False,
+                        xticklabels=["0 - not sexist", "1 - sexist"], yticklabels=["0 - not sexist", "1 - sexist"])
+            plt.title(f'Confusion matrix: {name}')
+            plt.xlabel('predicted')
+            plt.ylabel('actual')
+
+        plt.suptitle(model_name)
+        plt.tight_layout()
+        plt.show()
+
+
+class XGBoostClassifier(ClassificationModel):
     def __init__(self, max_depth=10, learning_rate=0.1, n_estimators=100, verbosity=1, objective='binary:logistic',
                  eval_metric='logloss'):
         """
@@ -55,11 +135,11 @@ class XGBoostClassifier:
         return convert_labels_to_string(y_pred)
 
 
-class MajorityClassClassifier:
+class MajorityClassClassifier(ClassificationModel):
     def __init__(self):
         self.majority_class = None
 
-    def train(self, y):
+    def train(self, X_train, y_train, X_val, y_val):
         """
         Determines the majority class from the training labels by manually counting.
         No need for a separate development set, therefore use concatenation.
@@ -67,7 +147,7 @@ class MajorityClassClassifier:
         count_not_sexist = 0
         count_sexist = 0
 
-        for label in y:
+        for label in y_train:
             if label == "not sexist":
                 count_not_sexist += 1
             elif label == "sexist":
@@ -88,13 +168,13 @@ class MajorityClassClassifier:
         return [self.majority_class] * len(X)
 
 
-class NaiveBayesClassifier:
+class NaiveBayesClassifier(ClassificationModel):
     def __init__(self):
         self.model = None
 
-    def train(self, X, y):
+    def train(self, X_train, y_train, X_val, y_val):
         self.model = MultinomialNB()
-        self.model.fit(X, y)
+        self.model.fit(X_train, y_train)
 
     def predict(self, X):
         if self.model is None:
@@ -103,7 +183,7 @@ class NaiveBayesClassifier:
         return self.model.predict(X)
 
 
-class LogisticRegression:
+class LogisticRegression(ClassificationModel):
     def __init__(self, vectorizer=None):
         pass
 
