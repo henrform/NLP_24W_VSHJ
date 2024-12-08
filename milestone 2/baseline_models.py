@@ -1,5 +1,6 @@
 import xgboost as xgb
 from sklearn.naive_bayes import MultinomialNB
+from sklearn import linear_model
 from import_preprocess import convert_labels_to_int, convert_labels_to_string
 from evaluate import Evaluation
 
@@ -185,10 +186,14 @@ class NaiveBayesClassifier(ClassificationModel):
 
 class LogisticRegression(ClassificationModel):
     def __init__(self, vectorizer=None):
-        pass
+        self.model = None
 
     def train(self, X_train, y_train, X_val, y_val):
-        pass
+        model = linear_model.LogisticRegression(max_iter=1000)
+        model.fit(X_train, y_train)
 
     def predict(self, X):
-        pass
+        if self.model is None:
+            raise ValueError("Model must be trained before prediction")
+
+        return self.model.predict(X)
