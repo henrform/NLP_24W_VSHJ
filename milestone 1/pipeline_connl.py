@@ -75,7 +75,8 @@ class TextProcessingPipeline:
         doc = nlp(text)
 
         conllu_format = [f"# sent_id = {sentence_id}",
-                         f"# label_sexist = {label_sexist}"]
+                         f"# label_sexist = {label_sexist}",
+                         f"# text = {text}"]
 
         for sentence in CoNLL.convert_dict(doc.to_dict()):
             for token in sentence:
