@@ -3,6 +3,7 @@
 import pandas as pd
 import numpy as np
 import re
+import os
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pickle  # For saving and loading models
@@ -76,9 +77,9 @@ def load_and_prepare_data(train_path, test_path):
     train_df = parse_conllu_file(train_path, debug=True)
     test_df = parse_conllu_file(test_path, debug=True)
 
-    label_mapping = {'not sexist': 0, 'sexist': 1}
-    train_df['label'] = train_df['label'].map(label_mapping)
-    test_df['label'] = test_df['label'].map(label_mapping)
+    # label_mapping = {'not sexist': 0, 'sexist': 1}
+    # train_df['label'] = train_df['label'].map(label_mapping)
+    # test_df['label'] = test_df['label'].map(label_mapping)
 
     return train_df, test_df
 
@@ -96,9 +97,11 @@ def save_model(model, vectorizer, model_name):
     """
     Saves the trained model and vectorizer to disk.
     """
-    with open(f'{model_name}_model.pkl', 'wb') as f:
+    if not os.path.exists("models"):
+        os.makedirs("models")
+    with open(f'models/{model_name}_model.pkl', 'wb') as f:
         pickle.dump(model, f)
-    with open(f'{model_name}_vectorizer.pkl', 'wb') as f:
+    with open(f'models/{model_name}_vectorizer.pkl', 'wb') as f:
         pickle.dump(vectorizer, f)
     print(f'Model and vectorizer saved for {model_name}.')
 
@@ -106,9 +109,9 @@ def load_model(model_name):
     """
     Loads the trained model and vectorizer from disk.
     """
-    with open(f'{model_name}_model.pkl', 'rb') as f:
+    with open(f'models/{model_name}_model.pkl', 'rb') as f:
         model = pickle.load(f)
-    with open(f'{model_name}_vectorizer.pkl', 'rb') as f:
+    with open(f'models/{model_name}_vectorizer.pkl', 'rb') as f:
         vectorizer = pickle.load(f)
     print(f'Model and vectorizer loaded for {model_name}.')
     return model, vectorizer
@@ -133,7 +136,7 @@ def evaluate_model_with_evaluation_class(model, vectorizer, X_train, y_train, X_
     evaluator = Evaluation(model)
 
     print(f"\nEvaluation for {model_name}:")
-    evaluator.evaluate(X_train_vec, y_train, X_test_vec, y_test)
+    evaluator.evaluate(X_train_vec, y_train, X_test_vec, y_test, model_name=model_name)
 
 def logistic_regression_bow(X_train, y_train, X_test, y_test):
     """
@@ -285,8 +288,8 @@ def test_new_input_sentence():
 
 
 if __name__ == '__main__':
-    train_path = '/data/processed/train_sexism_dataset_conllu.conllu'
-    test_path = '/data/processed/test_sexism_dataset_conllu.conllu'
+    train_path = '../data/processed/train_sexism_dataset_conllu.conllu'
+    test_path = '../data/processed/test_sexism_dataset_conllu.conllu'
 
 
     train_df, test_df = load_and_prepare_data(train_path,test_path)
