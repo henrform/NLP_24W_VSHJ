@@ -9,6 +9,41 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from abc import ABC, abstractmethod
 
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Embedding, LSTM, Dense
+
+from import_preprocess import convert_labels_to_int, convert_labels_to_string
+
+def get_all_predictions(dic_models, sample_x, sample_x_bow, sample_y):
+    """
+    Get predictions for all models on a single sample.
+    """
+    if sample_y not in ('sexist', 'not sexist'):
+        if sample_y in (0, 1):
+            sample_y = "sexist" if sample_y == 1 else "not sexist"
+        else:          
+            sample_y = convert_labels_to_string(sample_y)
+    
+    prediction = {'true': sample_y}
+    for name, model in dic_models.items():
+        if name == 'Majority Class':
+            prediction[name] = model.predict([sample_x])
+            
+        elif name in ('Naive Bayes', 'Logistic Regression', 'XGBoost (BOW)'):
+            prediction[name] = model.predict(sample_x_bow)
+            
+        elif name == 'LSTM':
+            pred = model.predict([sample_x])
+            pred = "sexist" if pred[0][0] > 0.5 else "not sexist"
+            prediction[name] = pred
+            
+        else:
+            raise ValueError(f"Model {name} not recognized")
+    return prediction
 
 class ClassificationModel(ABC):
     @abstractmethod
@@ -25,25 +60,25 @@ class ClassificationModel(ABC):
         Metrics: accuracy, balanced accuracy, precision, recall.
         """
         y_pred_list = [self.predict(X) for X in X_dict.values()]
-        # y_train_dev_pred = self.predict(X_train_dev)
-        # y_test_pred = self.predict(X_test)
+        
+        if model_name == "LSTM":
+            y_pred_list = [convert_labels_to_string(y) for y in y_pred_list]
+            y_true_list = [convert_labels_to_string(y) for y in y_true_list]
 
         dataset_names = []
         print("#" * 40 + "\n")
+        results = []
         for i, name in enumerate(X_dict.keys()):
             dataset_names.append(name)
             print(f"Metrics for {name}")
-            self._calculate_print_metrics(y_true_list[i], y_pred_list[i])
+            acc, bal_acc, prec, rec = self._calculate_print_metrics(y_true_list[i], y_pred_list[i])
+            results.append([model_name, name, acc, bal_acc, prec, rec])
             print("\n" + "#" * 40 + "\n")
-
-        # print("Metrics for TRAIN+DEV set")
-        # self.calculate_print_metrics(y_train_dev, y_train_dev_pred)
-        # print("#" * 40)
-        # print("\nMetrics for TEST set")
-        # self.calculate_print_metrics(y_test, y_test_pred)
 
         if plot_confusion:
             self._plot_confusion_matrices(y_true_list, y_pred_list, dataset_names, model_name)
+            
+        return results
 
     def _calculate_print_metrics(self, y_true, y_pred):
         """
@@ -52,14 +87,13 @@ class ClassificationModel(ABC):
         accuracy = accuracy_score(y_true, y_pred)
         balanced_accuracy = balanced_accuracy_score(y_true, y_pred)
         precision = precision_score(y_true, y_pred, zero_division=0.0, pos_label='sexist')
-        # precision = precision_score(y_true, y_pred)
         recall = recall_score(y_true, y_pred, zero_division=0.0, pos_label='sexist')
-        # recall = recall_score(y_true, y_pred)
 
         print(f"accuracy: {accuracy:.4f}")
         print(f"balanced accuracy: {balanced_accuracy:.4f}")
         print(f"precision: {precision:.4f}")
         print(f"recall: {recall:.4f}")
+        return accuracy, balanced_accuracy, precision, recall
 
     def _plot_confusion_matrices(self, y_true_list, y_pred_list, dataset_names, model_name):
         """
@@ -189,11 +223,52 @@ class LogisticRegression(ClassificationModel):
         self.model = None
 
     def train(self, X_train, y_train, X_val, y_val):
-        model = linear_model.LogisticRegression(max_iter=1000)
-        model.fit(X_train, y_train)
+        self.model = linear_model.LogisticRegression(max_iter=1000)
+        self.model.fit(X_train, y_train)
 
     def predict(self, X):
         if self.model is None:
             raise ValueError("Model must be trained before prediction")
 
         return self.model.predict(X)
+
+
+class LSTM_Model(ClassificationModel):
+    def __init__(self):
+        self.model = None
+        self.tokenizer = None
+        
+    def fit_tokenizer(self, X_train):
+        self.tokenizer = Tokenizer()
+        self.tokenizer.fit_on_texts(X_train)
+    
+    def prepare_X(self, X):
+        seq = self.tokenizer.texts_to_sequences(X)
+        padded = pad_sequences(seq, padding='post')
+        return padded
+        
+    def initialize_model(self, vocab_size):
+        model = Sequential()
+        model.add(Embedding(input_dim = vocab_size, output_dim = 64))
+        model.add(LSTM(32))
+        model.add(Dense(1, activation='sigmoid'))
+        model.compile(optimizer='rmsprop', loss='binary_crossentropy', metrics=['accuracy'])
+        return model
+    
+    def train(self, X_train, y_train, X_dev, y_dev):
+        self.fit_tokenizer(X_train)
+        vocab_size = len(self.tokenizer.word_index) + 1
+        
+        X_train = self.prepare_X(X_train)
+        X_dev = self.prepare_X(X_dev)
+        y_train = np.array(y_train)
+        y_dev = np.array(y_dev)
+        
+        self.model = self.initialize_model(vocab_size)
+        self.model.fit(X_train, y_train, epochs=10, batch_size=32, validation_data=(X_dev, y_dev))
+        
+    def predict(self, X):
+        X = self.prepare_X(X)
+        probs = self.model.predict(X)
+        y_pred = (probs > 0.5).astype(int)
+        return y_pred

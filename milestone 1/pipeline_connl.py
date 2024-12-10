@@ -75,7 +75,8 @@ class TextProcessingPipeline:
         doc = nlp(text)
 
         conllu_format = [f"# sent_id = {sentence_id}",
-                         f"# label_sexist = {label_sexist}"]
+                         f"# label_sexist = {label_sexist}"
+                         f"# text = {text}"]
 
         for sentence in CoNLL.convert_dict(doc.to_dict()):
             for token in sentence:
@@ -89,7 +90,7 @@ class TextProcessingPipeline:
         with open(output_file, 'w') as f:
             for _, row in tqdm(df.iterrows(), total=total_rows, desc="Processing rows", ncols=100, leave=True):
                 conllu_sentence = self.sentence_to_conllu_format(row)
-                f.write(conllu_sentence + '\n\n')
+                f.write(conllu_sentence + '\n\n', encoding='ISO-8859-1')
         logger.info("File saved: %s", output_file)
 
 
