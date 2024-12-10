@@ -20,9 +20,9 @@ def convert_labels_to_int(y):
 class ImportPreprocess:
     def __init__(self, folder_path="../data/processed/"):
         self.folder_path = folder_path
-        self.X_train, self.y_train = None, None
-        self.X_val, self.y_val = None, None
-        self.X_test, self.y_test = None, None
+        self.X_train, self.y_train, self.S_train = None, None, None
+        self.X_val, self.y_val, self.S_val = None, None, None
+        self.X_test, self.y_test, self.S_test = None, None, None
 
     def import_train_val_test(self):
         """
@@ -42,15 +42,17 @@ class ImportPreprocess:
             
             X = []
             y = []
+            S = []
             for tokenlist in data:
                 y.append(tokenlist.metadata['label_sexist'])
                 X.append([token['form'] for token in tokenlist])
+                S.append(tokenlist.metadata['text'])
             
-            datasets[dataset_type] = {'X': X, 'y': y}
+            datasets[dataset_type] = {'X': X, 'y': y, 'S': S}
         
-        self.X_train, self.y_train = datasets['train']['X'], datasets['train']['y']
-        self.X_val, self.y_val = datasets['dev']['X'], datasets['dev']['y']
-        self.X_test, self.y_test = datasets['test']['X'], datasets['test']['y']
+        self.X_train, self.y_train, self.S_train = datasets['train']['X'], datasets['train']['y'], datasets['train']['S']
+        self.X_val, self.y_val, self.S_val = datasets['dev']['X'], datasets['dev']['y'], datasets['dev']['S']
+        self.X_test, self.y_test, self.S_test = datasets['test']['X'], datasets['test']['y'], datasets['test']['S']
 
     def concatenate_train_val(self):
         return self.X_train + self.X_val, self.y_train + self.y_val
