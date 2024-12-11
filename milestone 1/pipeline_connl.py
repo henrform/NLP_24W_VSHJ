@@ -26,7 +26,6 @@ logger.info("Customized stopwords list: %s", sorted(stopwords_set))
 stanza.download('en')
 nlp = stanza.Pipeline('en', processors='tokenize,lemma,pos,depparse')
 
-# Load dataset
 df = pd.read_csv('../data/edos_labelled_aggregated.csv')
 
 
