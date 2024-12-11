@@ -26,7 +26,6 @@ logger.info("Customized stopwords list: %s", sorted(stopwords_set))
 stanza.download('en')
 nlp = stanza.Pipeline('en', processors='tokenize,lemma,pos,depparse')
 
-# Load dataset
 df = pd.read_csv('../data/edos_labelled_aggregated.csv')
 
 
@@ -68,6 +67,7 @@ class TextProcessingPipeline:
 
     def sentence_to_conllu_format(self, row):
         """Convert a sentence row to CoNLL-U format."""
+        full_sentence = row['text']
         text = self.preprocess_text(row['text'])
         sentence_id = row['rewire_id']
         label_sexist = row['label_sexist']
@@ -76,7 +76,7 @@ class TextProcessingPipeline:
 
         conllu_format = [f"# sent_id = {sentence_id}",
                          f"# label_sexist = {label_sexist}",
-                         f"# text = {text}"]
+                         f"# text = {full_sentence}"]
 
         for sentence in CoNLL.convert_dict(doc.to_dict()):
             for token in sentence:
@@ -87,7 +87,7 @@ class TextProcessingPipeline:
     def write_to_conllu(self, df, output_file):
         """Write the dataframe to a CoNLL-U formatted file."""
         total_rows = len(df)
-        with open(output_file, 'w') as f:
+        with open(output_file, 'w', encoding='utf-8') as f:
             for _, row in tqdm(df.iterrows(), total=total_rows, desc="Processing rows", ncols=100, leave=True):
                 conllu_sentence = self.sentence_to_conllu_format(row)
                 f.write(conllu_sentence + '\n\n')
