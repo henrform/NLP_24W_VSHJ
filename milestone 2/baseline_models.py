@@ -1,3 +1,4 @@
+import re
 import xgboost as xgb
 from sklearn.naive_bayes import MultinomialNB
 from sklearn import linear_model
@@ -201,6 +202,26 @@ class MajorityClassClassifier(ClassificationModel):
             raise ValueError("Model must be trained before prediction")
 
         return [self.majority_class] * len(X)
+    
+
+class RuleBasedClassifier(ClassificationModel):
+    def __init__(self, patterns):
+        """
+        'patterns' - list of patterns that we consider as hate speech/sexism
+        """
+        self.patterns = [re.compile(pattern, re.IGNORECASE) for pattern in patterns]
+
+    def classify(self, text):
+        for pattern in self.patterns:
+            if pattern.search(text):
+                return "sexist" 
+        return "not sexist"
+    
+    def train(self, S_train):
+        pass
+    
+    def predict(self, S_test):
+        return [self.classify(text) for text in S_test]
 
 
 class NaiveBayesClassifier(ClassificationModel):
