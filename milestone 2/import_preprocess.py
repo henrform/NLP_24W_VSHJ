@@ -86,7 +86,7 @@ class ImportPreprocess:
         self.X_train_balanced, self.y_train_balanced = X_balanced, y_balanced
         
     
-    def create_bow_representation(self, max_features=300, balanced=False):
+    def create_bow_representation(self, max_features=3000, balanced=False):
         """
         Transform tokenized sentences into bag of words (BoW) representation.
         'CountVectorizer' is applied, but without any preprocessing (already done in milestone 1).
@@ -112,7 +112,7 @@ class ImportPreprocess:
         return X_train_bow, X_val_bow, X_test_bow, X_train_val_bow, vectorizer.get_feature_names_out()
 
 
-    def create_tfidf_representation(self, max_features=300, balanced=False):
+    def create_tfidf_representation(self, max_features=3000, balanced=False):
         """
         Transform tokenized sentences into TF-IDF representation.
         Same explanation as in 'create_bow_representation'.
