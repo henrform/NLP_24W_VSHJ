@@ -71,8 +71,11 @@ class ImportPreprocess:
         class_0_indices = np.where(y == 0)[0]
         class_1_indices = np.where(y == 1)[0]
         
-        sampled_class_0_indices = np.random.choice(class_0_indices, size=n_samples, replace=True)
-        sampled_class_1_indices = np.random.choice(class_1_indices, size=n_samples, replace=True)
+        replace_0 = n_samples > len(class_0_indices)
+        replace_1 = n_samples > len(class_1_indices)
+         
+        sampled_class_0_indices = np.random.choice(class_0_indices, size=n_samples, replace=replace_0)
+        sampled_class_1_indices = np.random.choice(class_1_indices, size=n_samples, replace=replace_1)
 
         balanced_indices = np.concatenate([sampled_class_0_indices, sampled_class_1_indices])
         np.random.shuffle(balanced_indices) 
