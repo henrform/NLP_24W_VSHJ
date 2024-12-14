@@ -27,6 +27,7 @@ stanza.download('en')
 nlp = stanza.Pipeline('en', processors='tokenize,lemma,pos,depparse')
 
 df = pd.read_csv('../data/edos_labelled_aggregated.csv')
+individual_annotations = pd.read_csv('../data/edos_labelled_individual_annotations.csv')
 
 
 class TextProcessingPipeline:
@@ -47,7 +48,7 @@ class TextProcessingPipeline:
     def clean_text(text):
         """Clean text by converting to lowercase"""
         text = text.lower()
-        text = re.sub(r'[^\w\s.,!?\'"]+', '', text)
+        text = re.sub(r'[^\w\s!?\'"]+', '', text)
         return text
 
     @staticmethod
@@ -72,10 +73,13 @@ class TextProcessingPipeline:
         sentence_id = row['rewire_id']
         label_sexist = row['label_sexist']
 
+        multi_label = list(individual_annotations[individual_annotations["rewire_id"] == sentence_id]["label_sexist"].to_numpy())
+
         doc = nlp(text)
 
         conllu_format = [f"# sent_id = {sentence_id}",
                          f"# label_sexist = {label_sexist}",
+                         f"# multi_label = {multi_label}",
                          f"# text = {full_sentence}"]
 
         for sentence in CoNLL.convert_dict(doc.to_dict()):

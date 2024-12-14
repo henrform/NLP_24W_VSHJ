@@ -2,6 +2,7 @@ import conllu
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from scipy.sparse import vstack
 import numpy as np
+import ast
 
 def convert_labels_to_string(y):
     """
@@ -44,16 +45,18 @@ class ImportPreprocess:
             X = []
             y = []
             S = []
+            y_multi = []
             for tokenlist in data:
                 y.append(tokenlist.metadata['label_sexist'])
                 X.append([token['form'] for token in tokenlist])
                 S.append(tokenlist.metadata['text'])
+                y_multi.append(ast.literal_eval(tokenlist.metadata["multi_label"]))
             
-            datasets[dataset_type] = {'X': X, 'y': y, 'S': S}
+            datasets[dataset_type] = {'X': X, 'y': y, 'S': S, 'y_multi': y_multi}
         
-        self.X_train, self.y_train, self.S_train = datasets['train']['X'], datasets['train']['y'], datasets['train']['S']
-        self.X_val, self.y_val, self.S_val = datasets['dev']['X'], datasets['dev']['y'], datasets['dev']['S']
-        self.X_test, self.y_test, self.S_test = datasets['test']['X'], datasets['test']['y'], datasets['test']['S']
+        self.X_train, self.y_train, self.S_train, self.y_train_multi = datasets['train']['X'], datasets['train']['y'], datasets['train']['S'], datasets['train']['y_multi']
+        self.X_val, self.y_val, self.S_val, self.y_val_multi = datasets['dev']['X'], datasets['dev']['y'], datasets['dev']['S'], datasets['dev']['y_multi']
+        self.X_test, self.y_test, self.S_test, self.y_test_multi = datasets['test']['X'], datasets['test']['y'], datasets['test']['S'], datasets['test']['y_multi']
 
     def concatenate_train_val(self):
         return self.X_train + self.X_val, self.y_train + self.y_val
