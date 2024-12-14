@@ -105,13 +105,9 @@ class ImportPreprocess:
 
         X_val_bow = vectorizer.transform(self.X_val)
         X_test_bow = vectorizer.transform(self.X_test)
-        
-        # X_balanced, _ = self.create_balanced_dataset(self.X_train, self.y_train, n_samples=5000)
-        # X_balanced_bow = vectorizer.transform(X_balanced)
 
         X_train_val_bow = vstack([X_train_bow, X_val_bow]) # for final evaluation purpose
 
-        # return X_train_bow, X_val_bow, X_test_bow, X_balanced_bow, X_train_val_bow, vectorizer.get_feature_names_out()
         return X_train_bow, X_val_bow, X_test_bow, X_train_val_bow, vectorizer.get_feature_names_out()
 
 

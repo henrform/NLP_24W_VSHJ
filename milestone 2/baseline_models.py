@@ -6,6 +6,7 @@ from import_preprocess import convert_labels_to_int, convert_labels_to_string
 from evaluate import Evaluation
 
 from sklearn.metrics import accuracy_score, balanced_accuracy_score, precision_score, recall_score, confusion_matrix
+from collections import Counter
 import seaborn as sns
 import matplotlib.pyplot as plt
 from abc import ABC, abstractmethod
@@ -118,6 +119,79 @@ class ClassificationModel(ABC):
         plt.tight_layout()
         plt.show()
 
+    def qualitative_analysis_top_tokens(self, X_original_tokenized, X_representation, y, set_type="train", model_name="", plot=False, top_n=25):
+        """
+        X_original_tokenized - original lists of tokens
+        X_representation - BOW/TF-IDF features (if model should use them us an input)
+
+        For each of the 4 corners of confision matrix (TN, FP, FN, TP) find 'top_n' most 
+        frequently occuring tokens. Plot bar charts if 'plot' set.  
+        """
+        y_pred = self.predict(X_representation)
+
+        if model_name == "LSTM":
+            y_pred = convert_labels_to_string(y_pred)
+            y = convert_labels_to_string(y) 
+
+        true_positives = []
+        false_negatives = []
+        false_positives = []
+        true_negatives = []
+
+        for tokens, true_label, pred_label in zip(X_original_tokenized, y, y_pred):
+            if true_label == "sexist" and pred_label == "sexist":
+                true_positives.append(tokens)
+            elif true_label == "sexist" and pred_label == "not sexist":
+                false_negatives.append(tokens)
+            elif true_label == "not sexist" and pred_label == "sexist":
+                false_positives.append(tokens)
+            elif true_label == "not sexist" and pred_label == "not sexist":
+                true_negatives.append(tokens)
+
+        top_tn_tokens = self._get_top_tokens(true_negatives, n=top_n)
+        top_fp_tokens = self._get_top_tokens(false_positives, n=top_n)
+        top_fn_tokens = self._get_top_tokens(false_negatives, n=top_n)
+        top_tp_tokens = self._get_top_tokens(true_positives, n=top_n)
+
+        if plot:
+            self._plot_top_token(top_tn_tokens, top_fp_tokens, top_fn_tokens, top_tp_tokens, set_type=set_type, model_name=model_name)
+        else:
+            return top_tn_tokens, top_fp_tokens, top_fn_tokens, top_tp_tokens
+
+        
+    def _get_top_tokens(self, tokenized_sentences, n=25):
+        all_tokens = [token for sentence in tokenized_sentences for token in sentence]  # flatten the list of lists
+        token_counts = Counter(all_tokens)
+        return token_counts.most_common(n)
+    
+    def _plot_top_token(self, top_tn_tokens, top_fp_tokens, top_fn_tokens, top_tp_tokens, set_type, model_name):
+        data = {
+            "true negatives": top_tn_tokens,
+            "false positives": top_fp_tokens,
+            "false negatives": top_fn_tokens,
+            "true positives": top_tp_tokens
+        }
+        
+        fig, axes = plt.subplots(2, 2, figsize=(6,10))
+        axes = axes.flatten()
+
+        for ax, (title, tokens) in zip(axes, data.items()):
+            if not tokens:  
+                ax.set_title(title, fontsize=12)
+                ax.text(0.5, 0.5, 'no tokens', ha='center', va='center', fontsize=12)
+                ax.axis('off')
+                continue
+            tokens, counts = zip(*tokens)  
+            ax.barh(tokens, counts, color='steelblue')  
+            ax.set_title(title, fontsize=12)
+            ax.set_xlabel("count")  
+            ax.invert_yaxis()
+            ax.set_yticks(range(len(tokens)))
+            ax.set_yticklabels(tokens, fontsize=10)
+        
+        plt.suptitle(f"{model_name}\nset: {set_type}", fontsize=16)
+        plt.tight_layout(rect=[0, 0, 1, 0.96])  
+        plt.show()     
 
 class XGBoostClassifier(ClassificationModel):
     def __init__(self, max_depth=10, learning_rate=0.1, n_estimators=100, verbosity=1, objective='binary:logistic',
