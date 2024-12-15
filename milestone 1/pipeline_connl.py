@@ -18,8 +18,7 @@ nltk.download('stopwords')
 
 # Initialize custom stopwords
 stopwords_set = set(stopwords.words('english'))
-stopwords_set -= {'she', 'she\'s', 'herself', 'her', 'hers', 'he', 'himself', 'him', 'his',
-                  'yourself', 'yourselves', 'your', 'yours'}
+stopwords_set = stopwords_set - {'ain', 'are', 'aren', "aren't", 'can', 'couldn', "couldn't", 'did', 'didn', "didn't", 'do', 'does', 'doesn', "doesn't", 'don', "don't", 'had', 'hadn', "hadn't", 'has', 'hasn', "hasn't", 'have', 'haven', "haven't", 'having', 'here', 'how', 'i', 'is', 'isn', "isn't", 'just', 'me', 'mightn', "mightn't", 'more', 'mustn', "mustn't", 'my', 'myself', 'needn', "needn't", 'no', 'nor', 'not', 'only', 'ours', 'ourselves', 'shan', "shan't", 'should', "should've", 'shouldn', "shouldn't", 'they', 'was', 'wasn', "wasn't", 'we', 'were', 'weren', "weren't", 'what', 'when', 'where', 'which', 'who', 'whom', 'why', 'will', 'won', "won't", 'wouldn', "wouldn't", 'y', 'you', "you'd", "you'll", "you're", "you've"}
 logger.info("Customized stopwords list: %s", sorted(stopwords_set))
 
 # Download and initialize Stanza English pipeline
@@ -48,7 +47,7 @@ class TextProcessingPipeline:
     def clean_text(text):
         """Clean text by converting to lowercase"""
         text = text.lower()
-        text = re.sub(r'[^\w\s!?\'"]+', '', text)
+        text = re.sub(r'[^\w\s!?]+', '', text)
         return text
 
     @staticmethod
