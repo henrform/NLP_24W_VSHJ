@@ -16,6 +16,7 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Embedding, LSTM, Dense
+from tensorflow.keras.callbacks import EarlyStopping
 
 from import_preprocess import convert_labels_to_int, convert_labels_to_string
 
@@ -229,9 +230,12 @@ class ClassificationModel(ABC):
         plt.show()
         
         print("Examples:")
-        for context, label in contexts[:no_examples]:
+        indices = np.random.choice(len(contexts), no_examples, replace=False)
+        for i in indices:
+            context, label = contexts[i]
+            prediction = y_pred[i]
             label = "sexist" if label == 1 or label == "sexist" else "not sexist"
-            print(f"Label: {label}")
+            print(f"Label: {label}, Prediction: {prediction}")
             print(context)
             print()
         
@@ -390,7 +394,7 @@ class LSTM_Model(ClassificationModel):
     def initialize_model(self, vocab_size):
         model = Sequential()
         model.add(Embedding(input_dim = vocab_size, output_dim = 64))
-        model.add(LSTM(32))
+        model.add(LSTM(64))
         model.add(Dense(1, activation='sigmoid'))
         model.compile(optimizer='rmsprop', loss='binary_crossentropy', metrics=['accuracy'])
         return model
@@ -405,7 +409,8 @@ class LSTM_Model(ClassificationModel):
         y_dev = np.array(y_dev)
         
         self.model = self.initialize_model(vocab_size)
-        self.model.fit(X_train, y_train, epochs=10, batch_size=32, validation_data=(X_dev, y_dev))
+        early_stopping = EarlyStopping(patience=7, restore_best_weights=True, monitor='val_loss', min_delta=0.005)
+        self.model.fit(X_train, y_train, epochs=200, batch_size=32, validation_data=(X_dev, y_dev), callbacks=[early_stopping])
         
     def predict(self, X):
         X = self.prepare_X(X)
