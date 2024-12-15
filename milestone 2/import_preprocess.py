@@ -130,6 +130,4 @@ class ImportPreprocess:
 
         X_train_val_tfidf = vstack([X_train_tfidf, X_val_tfidf])  # for final evaluation purpose
 
-        return X_train_tfidf, X_val_tfidf, X_test_tfidf, X_train_val_tfidf, vectorizer.get_feature_names_out()
-
-    
+        return X_train_tfidf, X_val_tfidf, X_test_tfidf, X_train_val_tfidf, vectorizer.get_feature_names_out()    

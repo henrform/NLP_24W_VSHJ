@@ -58,7 +58,7 @@ class ClassificationModel(ABC):
 
     def evaluate(self, X_dict, y_true_list, plot_confusion=True, model_name=""):
         """
-        Evaluate the model on train+dev and test sets.
+        Evaluate the model on train and validatino sets.
         Metrics: accuracy, balanced accuracy, precision, recall.
         """
         y_pred_list = [self.predict(X) for X in X_dict.values()]
@@ -78,7 +78,7 @@ class ClassificationModel(ABC):
             print("\n" + "#" * 40 + "\n")
 
         if plot_confusion:
-            self._plot_confusion_matrices(y_true_list, y_pred_list, dataset_names, model_name)
+            self._plot_confusion_matrices(y_true_list, y_pred_list, dataset_names, model_name, ax=None, plot=True)
             
         return results
 
@@ -97,27 +97,31 @@ class ClassificationModel(ABC):
         print(f"recall: {recall:.4f}")
         return accuracy, balanced_accuracy, precision, recall
 
-    def _plot_confusion_matrices(self, y_true_list, y_pred_list, dataset_names, model_name):
+    def _plot_confusion_matrices(self, y_true_list, y_pred_list, dataset_names, model_name, ax=None, plot=True):
         """
-        Plot confusion matrices for train+dev and test sets.
+        Plot confusion matrices for train and validation sets.
         """
         num_datasets = len(dataset_names)
-        fig, axes = plt.subplots(1, num_datasets, figsize=(4*num_datasets, 4))
+        if ax is None:
+            fig, ax = plt.subplots(1, num_datasets, figsize=(4*num_datasets, 4))
+            ax = [ax] if num_datasets == 1 else ax
 
         for i, pair in enumerate(zip(dataset_names, y_true_list, y_pred_list)):
             name, y_true, y_pred = pair
             cm = confusion_matrix(y_true, y_pred)
 
-            plt.subplot(1, num_datasets, i + 1)
             sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False,
-                        xticklabels=["0 - not sexist", "1 - sexist"], yticklabels=["0 - not sexist", "1 - sexist"])
-            plt.title(f'Confusion matrix: {name}')
-            plt.xlabel('predicted')
-            plt.ylabel('actual')
+                        xticklabels=["0 - not sexist", "1 - sexist"], yticklabels=["0 - not sexist", "1 - sexist"], ax=ax[i])
+            ax[i].set_title(f'Confusion matrix: {name}')
+            ax[i].set_xlabel('predicted')
+            ax[i].set_ylabel('actual')
 
         plt.suptitle(model_name)
         plt.tight_layout()
-        plt.show()
+        if plot:
+            plt.show()
+        else:
+            return ax
 
     def qualitative_analysis_top_tokens(self, X_original_tokenized, X_representation, y, set_type="train", model_name="", plot=False, top_n=25):
         """
@@ -191,7 +195,49 @@ class ClassificationModel(ABC):
         
         plt.suptitle(f"{model_name}\nset: {set_type}", fontsize=16)
         plt.tight_layout(rect=[0, 0, 1, 0.96])  
-        plt.show()     
+        plt.show()
+        
+    
+    def get_context_for_token(self, token, input, y, X, S, no_examples=5, return_contexts=False):
+        """
+        Find the context for a given token in the dataset.
+        """
+        predictions = self.predict(input)
+        contexts = []
+        processed_tokens = []
+        y_true = []
+        y_pred = []
+        for tokens, label, prediction, sentence in zip(X, y, predictions, S):
+            if token in tokens:
+                contexts.append((sentence, label))
+                processed_tokens.append(tokens)
+                y_true.append(label)
+                y_pred.append(prediction)
+        
+        all_tokens = [word for tokens in processed_tokens for word in tokens if word != token]
+        all_tokens = [word for word in all_tokens if len(word) > 2]
+        token_counts = Counter(all_tokens)
+        top_tokens = token_counts.most_common(10)
+        tokens, counts = zip(*top_tokens)
+        tokens = tokens[::-1]
+        counts = counts[::-1]
+        
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
+        self._plot_confusion_matrices([y_true], [y_pred], [""], model_name=f"Token: {token}", ax=[ax1], plot=False)
+        ax2.barh(tokens, counts, color='steelblue')
+        ax2.set_title(f"Most common tokens in the context of '{token}'")
+        plt.tight_layout()
+        plt.show()
+        
+        print("Examples:")
+        for context, label in contexts[:no_examples]:
+            label = "sexist" if label == 1 or label == "sexist" else "not sexist"
+            print(f"Label: {label}")
+            print(context)
+            print()
+        
+        if return_contexts:
+            return contexts 
 
 class XGBoostClassifier(ClassificationModel):
     def __init__(self, max_depth=10, learning_rate=0.1, n_estimators=100, verbosity=1, objective='binary:logistic',
