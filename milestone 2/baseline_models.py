@@ -3,7 +3,6 @@ import xgboost as xgb
 from sklearn.naive_bayes import MultinomialNB
 from sklearn import linear_model
 from import_preprocess import convert_labels_to_int, convert_labels_to_string
-from evaluate import Evaluation
 
 from sklearn.metrics import accuracy_score, balanced_accuracy_score, precision_score, recall_score, confusion_matrix
 from collections import Counter
