@@ -47,3 +47,6 @@ The dataset is imbalanced, so in `milestone_2.ipynb`, all models are trained usi
 4. testing the models on custom sentences
 
 Baseline models offer a solid starting point but have notable limitations. They struggle to capture context, deeper semantic meaning, sarcasm or implicit sexism. Despite balancing efforts, they remain biased toward the majority class and show limited generalizability, relying heavily on explicit patterns and word frequencies.
+
+#### Update after the review meeting
+As discussed, the problem of sexism detection is ambiguous and it's worth experimenting with different techniques for aggregating the individual annotations from the 3 annotators. This type of analysis can be found in the `milestone 2/milestone_2.ipynb` under the section `Different methods of aggregation`. Beyond the original labels provided by the dataset creators, we explored the impact of using majority voting and assigning the "sexist" label if at least one annotator marked it as such.
