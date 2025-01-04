@@ -3,6 +3,7 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from scipy.sparse import vstack
 import numpy as np
 import ast
+from collections import Counter
 
 def convert_labels_to_string(y):
     """
@@ -21,10 +22,10 @@ def convert_labels_to_int(y):
 class ImportPreprocess:
     def __init__(self, folder_path="../data/processed/"):
         self.folder_path = folder_path
-        self.X_train, self.y_train, self.S_train = None, None, None
-        self.X_val, self.y_val, self.S_val = None, None, None
-        self.X_test, self.y_test, self.S_test = None, None, None
-        self.X_train_balanced, self.y_train_balanced = None, None
+        self.X_train, self.y_train, self.S_train, self.y_train_multi = None, None, None, None
+        self.X_val, self.y_val, self.S_val, self.y_val_multi = None, None, None, None
+        self.X_test, self.y_test, self.S_test, self.y_test_multi = None, None, None, None
+        self.X_train_balanced, self.y_train_balanced, self.y_train_multi_balanced = None, None, None
 
     def import_train_val_test(self):
         """
@@ -35,6 +36,10 @@ class ImportPreprocess:
         X_train, y_train, X_val, y_val, X_test, y_test
             - X_* contains tokenized sentences
             - y_* contains the labels ('sexist'/'not sexist')
+        S_train, S_val, S_test
+            - S_* contains original sentences
+        y_train_multi, y_val_multi, y_test_multi
+            - y_*_multi includes annotations provided by 3 labelers (non-aggregated)
         """
         datasets = {}
         for dataset_type in ['train', 'dev', 'test']:
@@ -85,12 +90,51 @@ class ImportPreprocess:
 
         X_balanced = [self.X_train[i] for i in balanced_indices]
         y_balanced = [y[i] for i in balanced_indices]
+        y_multi_balanced = [self.y_train_multi[i] for i in balanced_indices]
         
         if conversion_needed:
             y_balanced = convert_labels_to_string(y_balanced)
 
-        self.X_train_balanced, self.y_train_balanced = X_balanced, y_balanced
+        self.X_train_balanced, self.y_train_balanced, self.y_train_multi_balanced = X_balanced, y_balanced, y_multi_balanced
         
+    def apply_aggregation(self, aggregation_type='majority voting'):
+        """
+        Aggregate y_train_multi, y_val_multi, y_test_multi based on the specified aggregarion_type.
+        """
+        def aggregate_labels(y_multi, aggregation_type):
+            """
+            Aggregates labels of 3 annotators.
+            aggregation_type: method for aggregating labels 
+                - 'majority voting': assigns the label that occurs most frequently among the 3 annotators
+                - 'at least one sexist': assigns 'sexist' if at least 1 annotator labeled it as 'sexist';
+                                         otherwise, assigns 'not sexist'
+            """
+            if aggregation_type not in {'majority voting', 'at least one sexist'}:
+                raise ValueError("Invalid aggregation_type. Choose 'majority voting' or 'at least one sexist'.")
+
+            aggregated_labels = []
+            for labels in y_multi:
+                if aggregation_type == 'majority voting':
+                    # count the frequency of each label and choose the most common one
+                    label_counts = Counter(labels)
+                    aggregated_labels.append(label_counts.most_common(1)[0][0])
+                elif aggregation_type == 'at least one sexist':
+                    # assign 'sexist' if any annotator labeled it as such
+                    if 'sexist' in labels:
+                        aggregated_labels.append('sexist')
+                    else:
+                        aggregated_labels.append('not sexist')
+
+            return aggregated_labels
+
+        # apply aggregation to each dataset
+        y_train_agg = aggregate_labels(self.y_train_multi, aggregation_type)
+        y_train_balanced_agg = aggregate_labels(self.y_train_multi_balanced, aggregation_type) if self.y_train_balanced else None
+        y_val_agg = aggregate_labels(self.y_val_multi, aggregation_type)
+        y_test_agg = aggregate_labels(self.y_test_multi, aggregation_type)
+
+        return y_train_agg, y_train_balanced_agg, y_val_agg, y_test_agg
+
     
     def create_bow_representation(self, max_features=3000, balanced=False):
         """
