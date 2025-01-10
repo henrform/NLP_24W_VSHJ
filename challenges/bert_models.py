@@ -5,18 +5,39 @@ milestone_2_path = os.path.abspath("../milestone 2")
 sys.path.append(milestone_2_path)
 
 import torch
-from transformers import BertTokenizer, BertForSequenceClassification, AdamW
+from transformers import BertTokenizer, BertForSequenceClassification, DebertaV2Tokenizer, DebertaForSequenceClassification, RobertaTokenizer, RobertaForSequenceClassification, DistilBertTokenizer, DistilBertForSequenceClassification, AdamW
 from sklearn.metrics import accuracy_score
 from torch.utils.data import DataLoader, Dataset
 from torch.nn.utils.rnn import pad_sequence
 from baseline_models import ClassificationModel
 from import_preprocess import convert_labels_to_string, convert_labels_to_int
 
-class HateBERTModel(ClassificationModel):
-    def __init__(self):
-        print("Loading pretrained model and tokenizer...")
-        self.model = BertForSequenceClassification.from_pretrained("GroNLP/hateBERT", num_labels=2)
-        self.tokenizer = BertTokenizer.from_pretrained("GroNLP/hateBERT")
+
+class BERTModel(ClassificationModel):
+    def __init__(self, model_name):
+        """
+        Initialize the model with a specified transformer architecture: 
+        "DeBERTa", "RoBERTa", "HateBERT" or "DistilBERT".
+        """
+        print(f"Loading pretrained model and tokenizer: {model_name}...")
+
+        model_dict = {
+            "DeBERTa": (DebertaForSequenceClassification, DebertaV2Tokenizer, "microsoft/deberta-v3-base"),
+            "RoBERTa": (RobertaForSequenceClassification, RobertaTokenizer, "roberta-base"),
+            "HateBERT": (BertForSequenceClassification, BertTokenizer, "GroNLP/hateBERT"),
+            "DistilBERT": (DistilBertForSequenceClassification, DistilBertTokenizer, "distilbert-base-uncased")
+        }
+        
+        if model_name not in model_dict:
+            raise ValueError(f"Model {model_name} not supported. Choose from: 'DeBERTa', 'RoBERTa', 'HateBERT' or 'DistilBERT'.")
+        
+        self.model_name = model_name
+        model_class, tokenizer_class, model_path = model_dict[model_name]
+        
+        # load model and tokenizer 
+        self.model = model_class.from_pretrained(model_path, num_labels=2)
+        self.tokenizer = tokenizer_class.from_pretrained(model_path)
+        
         print("Pretrained weights loaded successfully.")
             
     def prepare_X(self, X):
