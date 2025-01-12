@@ -26,7 +26,8 @@ class BERTModel(ClassificationModel):
 
         model_dict = {
             "DeBERTa": (DebertaForSequenceClassification, DebertaV2Tokenizer, "microsoft/deberta-v3-base"),
-            "RoBERTa": (RobertaForSequenceClassification, RobertaTokenizer, "roberta-base"),
+            # "RoBERTa": (RobertaForSequenceClassification, RobertaTokenizer, "roberta-base"),
+            "RoBERTa": (RobertaForSequenceClassification, RobertaTokenizer, "cardiffnlp/twitter-roberta-base-sentiment-latest"),
             "HateBERT": (BertForSequenceClassification, BertTokenizer, "GroNLP/hateBERT"),
             "DistilBERT": (DistilBertForSequenceClassification, DistilBertTokenizer, "distilbert-base-uncased")
         }
@@ -38,7 +39,7 @@ class BERTModel(ClassificationModel):
         model_class, tokenizer_class, model_path = model_dict[model_name]
         
         # load model and tokenizer 
-        self.model = model_class.from_pretrained(model_path, num_labels=2)
+        self.model = model_class.from_pretrained(model_path, num_labels=2, ignore_mismatched_sizes=True)
         self.tokenizer = tokenizer_class.from_pretrained(model_path)
         
         print("Pretrained weights loaded successfully.")
