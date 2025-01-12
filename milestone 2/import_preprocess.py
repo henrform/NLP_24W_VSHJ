@@ -91,11 +91,12 @@ class ImportPreprocess:
         X_balanced = [self.X_train[i] for i in balanced_indices]
         y_balanced = [y[i] for i in balanced_indices]
         y_multi_balanced = [self.y_train_multi[i] for i in balanced_indices]
+        S_balanced = [self.S_train[i] for i in balanced_indices]
         
         if conversion_needed:
             y_balanced = convert_labels_to_string(y_balanced)
 
-        self.X_train_balanced, self.y_train_balanced, self.y_train_multi_balanced = X_balanced, y_balanced, y_multi_balanced
+        self.X_train_balanced, self.y_train_balanced, self.y_train_multi_balanced, self.S_train_balanced = X_balanced, y_balanced, y_multi_balanced, S_balanced
         
     def apply_aggregation(self, aggregation_type='majority voting'):
         """
