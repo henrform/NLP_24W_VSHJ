@@ -7,9 +7,11 @@ sys.path.append(milestone_2_path)
 import torch
 import matplotlib.pyplot as plt
 from transformers import BertTokenizer, BertForSequenceClassification, DebertaV2Tokenizer, DebertaForSequenceClassification, RobertaTokenizer, RobertaForSequenceClassification, DistilBertTokenizer, DistilBertForSequenceClassification, AdamW
+from transformers import Trainer, TrainingArguments, EarlyStoppingCallback
 from sklearn.metrics import accuracy_score
 from torch.utils.data import DataLoader, Dataset
 from torch.nn.utils.rnn import pad_sequence
+from datasets import Dataset as HFDataset # for HF integration
 from baseline_models import ClassificationModel
 from import_preprocess import convert_labels_to_string, convert_labels_to_int
 
@@ -69,6 +71,46 @@ class BERTModel(ClassificationModel):
                 return self.X[idx]
         return TextDataset(X, y)
     
+    def prepare_dataset_hf(self, X, y=None):
+        """
+        Create a Hugging Face Dataset from the input data.
+
+        Example: 
+        X[0] = ['shes', 'keeper', 'winking_face'], y[0] = 'not sexist'
+        encoded_dataset[0] = {'text': ['shes', 'keeper', 'winking_face'],
+                              'label': 0, # 'not sexist'
+                              'input_ids': [101, 2016, 2015, 10684, 16837, 2075, 1035, 2227, 102, 0, 0, ..., 0], 
+                              'token_type_ids': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ..., 0],
+                              'attention_mask': [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, ..., 0]}
+        'input_ids':
+            numerical IDs corresponding to the tokens, based on the tokenizer's vocabulary
+            [101] - special [CLS] token (used as a classification marker)
+            [102] - special [SEP] token (used as a sequence boundary)
+        'attention_mask':
+            indicates which tokens should be attended
+            1 - the token is part of the actual input
+            0 - the token is padding and should be ignored 
+        """
+        data = {"text": X}  # X is a list of lists of tokens
+        if y is not None:
+            data["label"] = convert_labels_to_int(y) # 0/1
+
+        # Hugging Face Dataset
+        dataset = HFDataset.from_dict(data)
+
+        # encode the dataset
+        def encode_function(examples):
+            return self.tokenizer(
+                examples["text"],  # pre-tokenized input as lists
+                truncation=True,
+                max_length=512,
+                padding="max_length",
+                is_split_into_words=True  # tell the tokenizer input is pre-tokenized
+            )
+
+        encoded_dataset = dataset.map(encode_function, batched=True)
+
+        return encoded_dataset
     
     def train(self, X_train, y_train, X_dev, y_dev, epochs=10, batch_size=32, lr=5e-5, patience=10, plot_training_curve=True):
         """
@@ -182,5 +224,57 @@ class BERTModel(ClassificationModel):
                 predictions.extend(preds)
         
         return convert_labels_to_string(predictions) # "sexist"/"not sexist"
+
+    def train_hugging_face_api(self, X_train, y_train, X_dev, y_dev, epochs=10, batch_size=32, lr=5e-5, patience=10):
+        """
+        This uses Hugging Face's built-in training loop and optimizers for model training.
+        """
+        train_dataset = self.prepare_dataset_hf(X_train, y_train)
+        val_dataset = self.prepare_dataset_hf(X_dev, y_dev)
+
+        # define metrics for evaluation
+        def compute_metrics(eval_pred):
+            logits, labels = eval_pred
+            predictions = torch.argmax(torch.tensor(logits), dim=1).numpy()
+            return {'accuracy': accuracy_score(labels, predictions)}
+
+        # training arguments
+        training_args = TrainingArguments(
+            output_dir=f'./results/{self.model_name}', # directory for model checkpoints
+            evaluation_strategy="epoch",     # evaluate every epoch
+            save_strategy="epoch",           # save model every epoch
+            save_total_limit=1,              # only save the last best model
+            load_best_model_at_end=True,     # load the best model at the end of training
+            metric_for_best_model="eval_loss",  # track validation loss to find the best model
+            greater_is_better=False,         # lower loss is better (cross-entropy loss automatically)
+            num_train_epochs=epochs,         # number of epochs
+            per_device_train_batch_size=batch_size,
+            per_device_eval_batch_size=batch_size,
+            learning_rate=lr,
+            weight_decay=0.01,               # weight decay for regularization
+            logging_dir=f'./logs/{self.model_name}', # directory for logs
+            logging_steps=10,
+        )
+
+        early_stopping_callback = EarlyStoppingCallback(early_stopping_patience=patience)
+
+        # Trainer
+        trainer = Trainer(
+            model=self.model,               # the pre-trained model
+            args=training_args,             # training arguments
+            train_dataset=train_dataset,    # training dataset
+            eval_dataset=val_dataset,       # validation dataset
+            tokenizer=self.tokenizer,       # tokenizer
+            compute_metrics=compute_metrics,      # evaluation metrics
+            callbacks=[early_stopping_callback],  # add early stopping callback
+        )
+
+        # training
+        print("Training using Hugging Face Trainer API...")
+        trainer.train()
+
+        # evaluate the model
+        eval_results = trainer.evaluate()
+        print(f"Evaluation Results: {eval_results}")
 
         
