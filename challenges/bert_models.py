@@ -151,8 +151,8 @@ class BERTModel(ClassificationModel):
             for batch in train_loader:
                 optimizer.zero_grad() # clear the gradients
                 X_batch, y_batch = batch
-                # X_batch = X_batch.to('cuda' if torch.cuda.is_available() else 'cpu')
-                # y_batch = torch.tensor(y_batch).to('cuda' if torch.cuda.is_available() else 'cpu')
+                X_batch = X_batch.to('cuda' if torch.cuda.is_available() else 'cpu')
+                y_batch = torch.tensor(y_batch).to('cuda' if torch.cuda.is_available() else 'cpu')
                 
                 outputs = self.model(X_batch, labels=y_batch) # computes loss too
                 loss = outputs.loss # cross-entropy loss
@@ -173,7 +173,7 @@ class BERTModel(ClassificationModel):
             with torch.no_grad():
                 for batch in dev_loader:
                     X_batch, y_batch = batch
-                    # X_batch = X_batch.to('cuda' if torch.cuda.is_available() else 'cpu')
+                    X_batch = X_batch.to('cuda' if torch.cuda.is_available() else 'cpu')
                     outputs = self.model(X_batch, labels=y_batch)
                     total_dev_loss += outputs.loss.item()
 
@@ -219,7 +219,7 @@ class BERTModel(ClassificationModel):
         predictions = []
         with torch.no_grad():
             for batch in data_loader:
-                # batch = batch.to('cuda' if torch.cuda.is_available() else 'cpu')
+                batch = batch.to('cuda' if torch.cuda.is_available() else 'cpu')
                 outputs = self.model(batch)
                 preds = torch.argmax(outputs.logits, dim=1).cpu().numpy()
                 predictions.extend(preds)
