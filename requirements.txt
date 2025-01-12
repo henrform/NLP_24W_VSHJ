@@ -17,3 +17,4 @@ transformers==4.48.0
 accelerate==1.2.1
 peft==0.14.0
 bitsandbytes==0.45.0
+sentencepiece==0.2.0

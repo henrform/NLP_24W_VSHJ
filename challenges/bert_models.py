@@ -174,12 +174,13 @@ class BERTModel(ClassificationModel):
                 for batch in dev_loader:
                     X_batch, y_batch = batch
                     X_batch = X_batch.to('cuda' if torch.cuda.is_available() else 'cpu')
+                    y_batch = y_batch.to('cuda' if torch.cuda.is_available() else 'cpu')
                     outputs = self.model(X_batch, labels=y_batch)
                     total_dev_loss += outputs.loss.item()
 
                     preds = torch.argmax(outputs.logits, dim=1).cpu().numpy()
                     all_preds.extend(preds)
-                    all_labels.extend(y_batch.numpy())
+                    all_labels.extend(y_batch.cpu().numpy())
             
             acc = accuracy_score(all_labels, all_preds)
             print(f"Validation Loss: {total_dev_loss:.4f}, Validation Accuracy: {acc:.4f}")
