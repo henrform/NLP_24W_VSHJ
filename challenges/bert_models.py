@@ -5,6 +5,7 @@ milestone_2_path = os.path.abspath("../milestone 2")
 sys.path.append(milestone_2_path)
 
 import torch
+import matplotlib.pyplot as plt
 from transformers import BertTokenizer, BertForSequenceClassification, DebertaV2Tokenizer, DebertaForSequenceClassification, RobertaTokenizer, RobertaForSequenceClassification, DistilBertTokenizer, DistilBertForSequenceClassification, AdamW
 from sklearn.metrics import accuracy_score
 from torch.utils.data import DataLoader, Dataset
@@ -69,7 +70,13 @@ class BERTModel(ClassificationModel):
         return TextDataset(X, y)
     
     
-    def train(self, X_train, y_train, X_dev, y_dev, epochs=3, batch_size=32, lr=5e-5):
+    def train(self, X_train, y_train, X_dev, y_dev, epochs=10, batch_size=32, lr=5e-5, patience=10, plot_training_curve=True):
+        """
+        Train the model with the provided training and validation datasets.
+        Monitor cross-entropy loss for both sets and trigger early stopping if no improvement 
+        is observed on the validation set for 'patience' consecutive epochs.
+        Set 'plot_training_curve' to True to visualize the training and validation loss curves.
+        """
         X_train = self.prepare_X(X_train)
         X_dev = self.prepare_X(X_dev)
 
@@ -89,10 +96,15 @@ class BERTModel(ClassificationModel):
         # loss_fn = torch.nn.CrossEntropyLoss()
         
         print("Training started.")
+        training_loss = []
+        validation_loss = []
+        best_val_loss = float('inf')
+        patience_counter = 0
+
         # Training loop
         for epoch in range(epochs):
             self.model.train()
-            total_loss = 0
+            total_train_loss = 0
             for batch in train_loader:
                 optimizer.zero_grad() # clear the gradients
                 X_batch, y_batch = batch
@@ -104,25 +116,56 @@ class BERTModel(ClassificationModel):
                 loss.backward() # backpropagation after each batch
                 optimizer.step() # update model's parameters
                 
-                total_loss += loss.item()
+                total_train_loss += loss.item()
             
-            print(f"Epoch {epoch + 1}/{epochs}, Cross-entropy Loss: {total_loss:.4f}")
+            print(f"Epoch {epoch + 1}/{epochs}, Cross-entropy Loss: {total_train_loss:.4f}")
+            avg_train_loss = total_train_loss / len(train_loader) # loss per batch
+            training_loss.append(avg_train_loss)
             
             # Validation
             self.model.eval()
             all_preds = []
             all_labels = []
+            total_dev_loss = 0
             with torch.no_grad():
                 for batch in dev_loader:
                     X_batch, y_batch = batch
                     # X_batch = X_batch.to('cuda' if torch.cuda.is_available() else 'cpu')
-                    outputs = self.model(X_batch)
+                    outputs = self.model(X_batch, labels=y_batch)
+                    total_dev_loss += outputs.loss.item()
+
                     preds = torch.argmax(outputs.logits, dim=1).cpu().numpy()
                     all_preds.extend(preds)
                     all_labels.extend(y_batch.numpy())
             
             acc = accuracy_score(all_labels, all_preds)
-            print(f"Validation Accuracy: {acc:.4f}")
+            print(f"Validation Loss: {total_dev_loss:.4f}, Validation Accuracy: {acc:.4f}")
+            avg_dev_loss = total_dev_loss / len(dev_loader) # loss per batch
+            validation_loss.append(avg_dev_loss)
+
+            # early stopping logic
+            if validation_loss[-1] < best_val_loss:
+                best_val_loss = validation_loss[-1]
+                patience_counter = 0
+            else:
+                patience_counter += 1
+                print(f"No improvement. Patience: {patience_counter}/{patience}")
+            
+            if patience_counter >= patience:
+                print("Early stopping triggered.")
+                break
+
+        # plot training and validation curves if requested
+        if plot_training_curve:
+            plt.figure(figsize=(8, 4))
+            plt.plot(range(1, len(training_loss) + 1), training_loss, label='training loss', marker='o', color='steelblue')
+            plt.plot(range(1, len(validation_loss) + 1), validation_loss, label='validation loss', marker='o', color='orange')
+            plt.xlabel('epoch')
+            plt.ylabel('cross-entropy loss per batch')
+            plt.title('Training and validation loss curves')
+            plt.legend()
+            plt.grid(linewidth=0.5)
+            plt.show()
     
     def predict(self, X):
         X = self.prepare_X(X)
@@ -139,3 +182,5 @@ class BERTModel(ClassificationModel):
                 predictions.extend(preds)
         
         return convert_labels_to_string(predictions) # "sexist"/"not sexist"
+
+        
