@@ -19,13 +19,14 @@ from import_preprocess import convert_labels_to_string, convert_labels_to_int
 
 
 class BERTModel(ClassificationModel):
-    def __init__(self, model_name, load_path=None):
+    def __init__(self, model_name, load_path=None, additional_info=""):
         """
         Initialize the model with a specified transformer architecture: 
         "DeBERTa", "RoBERTa", "HateBERT" or "DistilBERT".
 
         Initialize the model with pretrained weights.
-        If 'load_path' is specified, load the model weights from the checkpoint. 
+        If 'load_path' is specified, load the model weights from the checkpoint.
+        'additional_info' parameter will be used for naming the checkpoint file.
         """
         model_dict = {
             "DeBERTa": (DebertaForSequenceClassification, DebertaV2Tokenizer, "microsoft/deberta-v3-base"),
@@ -38,6 +39,7 @@ class BERTModel(ClassificationModel):
             raise ValueError(f"Model {model_name} not supported. Choose from: 'DeBERTa', 'RoBERTa', 'HateBERT' or 'DistilBERT'.")
         
         self.model_name = model_name
+        self.additional_info = additional_info
         model_class, tokenizer_class, model_path = model_dict[model_name]
 
         # instantiate model
@@ -64,7 +66,8 @@ class BERTModel(ClassificationModel):
         """
         if not os.path.exists(save_path):
             os.makedirs(save_path)
-        model_path = os.path.join(save_path, f"best_{self.model_name}.pth")
+        file_sub_name = f"{self.model_name}_{self.additional_info}" if self.additional_info else self.model_name
+        model_path = os.path.join(save_path, f"best_{file_sub_name}.pth")
 
         # save model state 
         torch.save(self.model.state_dict(), model_path)
@@ -74,7 +77,8 @@ class BERTModel(ClassificationModel):
         """
         Load the model from the specified path.
         """
-        model_path = os.path.join(load_path, f"best_{self.model_name}.pth")
+        file_sub_name = f"{self.model_name}_{self.additional_info}" if self.additional_info else self.model_name
+        model_path = os.path.join(load_path, f"best_{file_sub_name}.pth")
 
         # load model state
         self.model.load_state_dict(torch.load(model_path, map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu')))
