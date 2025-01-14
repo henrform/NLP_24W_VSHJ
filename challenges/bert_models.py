@@ -6,11 +6,12 @@ sys.path.append(milestone_2_path)
 
 import torch
 import matplotlib.pyplot as plt
-from transformers import BertTokenizer, BertForSequenceClassification, DebertaV2Tokenizer, DebertaForSequenceClassification, RobertaTokenizer, RobertaForSequenceClassification, DistilBertTokenizer, DistilBertForSequenceClassification, AdamW
+from transformers import BertTokenizer, BertForSequenceClassification, DebertaV2Tokenizer, DebertaForSequenceClassification, RobertaTokenizer, RobertaForSequenceClassification, DistilBertTokenizer, DistilBertForSequenceClassification
 from transformers import Trainer, TrainingArguments, EarlyStoppingCallback
 from sklearn.metrics import accuracy_score
 from torch.utils.data import DataLoader, Dataset
 from torch.nn.utils.rnn import pad_sequence
+from torch.optim import AdamW
 from datasets import Dataset as HFDataset # for HF integration
 from baseline_models import ClassificationModel
 from import_preprocess import convert_labels_to_string, convert_labels_to_int
@@ -187,8 +188,8 @@ class BERTModel(ClassificationModel):
                 optimizer.zero_grad() # clear the gradients
                 X_batch, y_batch = batch
                 X_batch = X_batch.to('cuda' if torch.cuda.is_available() else 'cpu')
-                y_batch = torch.tensor(y_batch).to('cuda' if torch.cuda.is_available() else 'cpu')
-                
+                y_batch = y_batch.to('cuda' if torch.cuda.is_available() else 'cpu')
+
                 outputs = self.model(X_batch, labels=y_batch) # computes loss too
                 loss = outputs.loss # cross-entropy loss
                 loss.backward() # backpropagation after each batch
