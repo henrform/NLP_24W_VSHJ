@@ -254,12 +254,12 @@ class BERTModel(ClassificationModel):
         dataset = self.prepare_dataset(X)
         data_loader = DataLoader(dataset, batch_size=32)
         
-        self.model.eval()
+        self.best_model.eval()
         predictions = []
         with torch.no_grad():
             for batch in data_loader:
                 batch = batch.to('cuda' if torch.cuda.is_available() else 'cpu')
-                outputs = self.model(batch)
+                outputs = self.best_model(batch)
                 preds = torch.argmax(outputs.logits, dim=1).cpu().numpy()
                 predictions.extend(preds)
         
