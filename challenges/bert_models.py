@@ -17,16 +17,16 @@ from import_preprocess import convert_labels_to_string, convert_labels_to_int
 
 
 class BERTModel(ClassificationModel):
-    def __init__(self, model_name):
+    def __init__(self, model_name, load_path=None):
         """
         Initialize the model with a specified transformer architecture: 
         "DeBERTa", "RoBERTa", "HateBERT" or "DistilBERT".
-        """
-        print(f"Loading pretrained model and tokenizer: {model_name}...")
 
+        Initialize the model with pretrained weights.
+        If 'load_path' is specified, load the model weights from the checkpoint. 
+        """
         model_dict = {
             "DeBERTa": (DebertaForSequenceClassification, DebertaV2Tokenizer, "microsoft/deberta-v3-base"),
-            # "RoBERTa": (RobertaForSequenceClassification, RobertaTokenizer, "roberta-base"),
             "RoBERTa": (RobertaForSequenceClassification, RobertaTokenizer, "cardiffnlp/twitter-roberta-base-sentiment-latest"),
             "HateBERT": (BertForSequenceClassification, BertTokenizer, "GroNLP/hateBERT"),
             "DistilBERT": (DistilBertForSequenceClassification, DistilBertTokenizer, "distilbert-base-uncased")
@@ -37,12 +37,46 @@ class BERTModel(ClassificationModel):
         
         self.model_name = model_name
         model_class, tokenizer_class, model_path = model_dict[model_name]
-        
-        # load model and tokenizer 
+
+        # instantiate model
+        print(f"Loading pretrained weights: {model_name}...")
         self.model = model_class.from_pretrained(model_path, num_labels=2, ignore_mismatched_sizes=True)
-        self.tokenizer = tokenizer_class.from_pretrained(model_path)
-        
         print("Pretrained weights loaded successfully.")
+        
+        # load from the checkpoint
+        if load_path:
+            print(f"Loading model weights from {load_path}...")
+            self.load_model(load_path)
+
+        print("Loading tokenizer...")
+        self.tokenizer = tokenizer_class.from_pretrained(model_path)
+        print("Tokenizer loaded sucessfully.")
+        
+        self.best_model = self.model # ensure predictions use the best model from training, not the final one
+
+    def save_model(self, save_path):
+        """
+        Save the model to the specified path.
+        During training, we're monitoring validation loss and preserving best model's weights.
+        Same tokenization process should be used for predictions later and we're ensuring it during instantiation.
+        """
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+        model_path = os.path.join(save_path, f"best_{self.model_name}.pth")
+
+        # save model state 
+        torch.save(self.model.state_dict(), model_path)
+        print(f"Model saved to {save_path}.")
+    
+    def load_model(self, load_path):
+        """
+        Load the model from the specified path.
+        """
+        model_path = os.path.join(load_path, f"best_{self.model_name}.pth")
+
+        # load model state
+        self.model.load_state_dict(torch.load(model_path, map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu')))
+        print(f"Model loaded from {load_path}.")
             
     def prepare_X(self, X):
         """
@@ -113,11 +147,12 @@ class BERTModel(ClassificationModel):
 
         return encoded_dataset
     
-    def train(self, X_train, y_train, X_dev, y_dev, epochs=10, batch_size=32, lr=5e-5, patience=10, plot_training_curve=True):
+    def train(self, X_train, y_train, X_dev, y_dev, epochs=10, batch_size=32, lr=5e-5, patience=10, plot_training_curve=True, save_path="best_model"):
         """
         Train the model with the provided training and validation datasets.
         Monitor cross-entropy loss for both sets and trigger early stopping if no improvement 
         is observed on the validation set for 'patience' consecutive epochs.
+        Save the best-performing model during training to the 'save_path'.
         Set 'plot_training_curve' to True to visualize the training and validation loss curves.
         """
         X_train = self.prepare_X(X_train)
@@ -187,10 +222,13 @@ class BERTModel(ClassificationModel):
             avg_dev_loss = total_dev_loss / len(dev_loader) # loss per batch
             validation_loss.append(avg_dev_loss)
 
-            # early stopping logic
+            # early stopping logic; save the model if better than current best
             if validation_loss[-1] < best_val_loss:
                 best_val_loss = validation_loss[-1]
                 patience_counter = 0
+                print(f"New best model found! Saving to {save_path}.")
+                self.best_model = self.model
+                self.save_model(save_path)
             else:
                 patience_counter += 1
                 print(f"No improvement. Patience: {patience_counter}/{patience}")
