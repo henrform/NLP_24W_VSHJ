@@ -6,6 +6,7 @@ sys.path.append(milestone_2_path)
 
 import torch
 import matplotlib.pyplot as plt
+import gc
 from transformers import BertTokenizer, BertForSequenceClassification, DebertaV2Tokenizer, DebertaForSequenceClassification, RobertaTokenizer, RobertaForSequenceClassification, DistilBertTokenizer, DistilBertForSequenceClassification
 from transformers import Trainer, TrainingArguments, EarlyStoppingCallback
 from sklearn.metrics import accuracy_score
@@ -78,6 +79,28 @@ class BERTModel(ClassificationModel):
         # load model state
         self.model.load_state_dict(torch.load(model_path, map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu')))
         print(f"Model loaded from {load_path}.")
+
+    def clear_gpu_memory(self):
+        """
+        Clear GPU memory after training to prevent memory overload.
+        """
+        try:
+            # delete model and tokenizer to free up memory
+            del self.model, self.tokenizer
+        except NameError:
+            pass
+        finally:
+            # clear up unused objects and empty GPU cache
+            gc.collect()
+            torch.cuda.empty_cache()
+
+    def count_parameters(self):
+        """
+        Counts the total number of parameters in the model.
+        """
+        total_params = sum(p.numel() for p in self.model.parameters())
+        print(f"Total number of parameters in the model {self.model_name}: {total_params}")
+        return total_params
             
     def prepare_X(self, X):
         """
