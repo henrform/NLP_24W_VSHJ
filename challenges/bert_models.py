@@ -16,7 +16,8 @@ from torch.optim import AdamW
 from datasets import Dataset as HFDataset # for HF integration
 from baseline_models import ClassificationModel
 from import_preprocess import convert_labels_to_string, convert_labels_to_int
-
+import shap
+import numpy as np
 
 class BERTModel(ClassificationModel):
     def __init__(self, model_name, load_path=None, additional_info=""):
@@ -57,6 +58,58 @@ class BERTModel(ClassificationModel):
         print("Tokenizer loaded sucessfully.")
         
         self.best_model = self.model # ensure predictions use the best model from training, not the final one
+
+    def explain_with_shap(self, sentence, max_display=10):
+        """
+        SHAP analysis for a given sentence and visualize using a waterfall plot.
+
+        Parameters:
+        - sentence: The input sentence as a string.
+        - max_display: Maximum number of tokens to display in the SHAP visualization.
+        """
+        import numpy as np
+
+        def predict_function(texts):
+            """
+            SHAP-compatible predict function.
+            Tokenizes input text and returns model predictions as probabilities.
+            """
+            if isinstance(texts, np.ndarray):
+                texts = texts.tolist()
+            elif isinstance(texts, str):
+                texts = [texts]
+
+            # Tokenize inputs
+            encoded_inputs = self.tokenizer(
+                texts,
+                return_tensors="pt",
+                truncation=True,
+                max_length=512,
+                padding=True
+            )
+            encoded_inputs = {key: val.to('cuda' if torch.cuda.is_available() else 'cpu') for key, val in
+                              encoded_inputs.items()}
+
+
+            with torch.no_grad():
+                outputs = self.best_model(**encoded_inputs)
+                return outputs.logits.softmax(dim=1).cpu().numpy()
+
+
+        explainer = shap.Explainer(predict_function, self.tokenizer)
+
+        shap_values = explainer([sentence])
+
+        print("SHAP values shape:", shap_values.values.shape)
+
+
+        explanation = shap.Explanation(
+            values=shap_values.values[0][:, 1],
+            base_values=shap_values.base_values[0, 1],
+            data=shap_values.data[0]
+        )
+
+        shap.plots.waterfall(explanation, max_display=max_display)
 
     def save_model(self, save_path):
         """
