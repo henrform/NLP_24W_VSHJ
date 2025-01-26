@@ -66,6 +66,14 @@ All relevant code can be found in the `transformer_models` folder, which include
     - The section `Qualitative analysis of HateBERT model` conducts a SHAP analysis on custom-crafted sentences, aiming to provide us an intuition into how HateBERT makes its decisions and address the challenge of making its predictions transparent and understandable for the end-user.
     - Finally, in the section `HateBERT vs. RNN`, we performed a comparative analysis of the strengths and weaknesses of these 2 models, both quantitatively and qualitatively.
 
+The following notebooks contain the same structure which is as follows: After importing the training data, we evaluate the base LLM
+without fine-tuning on the validation dataset. Next up is the fine-tuning, which is done on both the balanced (which is called train
+in the notebook) and unbalanced data set for 2-5 epochs, depending on the model. Afterward all models are evaluated for each epoch
+and the best performing one regarding recall was picked for further analysis. This analysis included an evaluation on the test set,
+a code cell to evaluate any comment and get the "confidence" in its prediction, i.e. the probability of the next token, an evaluation
+for custom sentences, a visualization of the attention for each word and a prompt that can be used to ask the model for an explanation
+for the label it has given.
+
 3. `classification_llama3.1.ipynb`
 4. `classification_llama3.2.ipynb` 
 5. `classification_phi-4.ipynb`
@@ -75,8 +83,18 @@ All relevant code can be found in the `transformer_models` folder, which include
 
 Results of the best models from each section on the test set:
 
-| Model     | Training Set Type | Label Aggregation Type | Accuracy | Balanced Accuracy | Precision | Recall  |
-|-----------|-------------------|------------------------|----------|-------------------|-----------|---------|
-| LSTM      | Balanced          | At least one sexist    | 0.7428   | 0.7130            | 0.6820    | 0.5927  |
-| HateBERT  | Balanced          | At least one sexist    | 0.7810   | 0.7771            | 0.6891    | 0.7615  |
-| Llama 3.2 |                   |                        |          |                   |           |         |
+| Model     | Training Set Type | Label Aggregation Type | Accuracy | Balanced Accuracy | Precision | Recall |
+|-----------|-------------------|------------------------|----------|-------------------|-----------|--------|
+| LSTM      | Balanced          | At least one sexist    | 0.743    | 0.713             | 0.682     | 0.593  |
+| HateBERT  | Balanced          | At least one sexist    | 0.781    | 0.777             | 0.689     | 0.762  |
+| Llama 3.2 | Unbalanced        | Default                | 0.878    | 0.859             | 0.717     | 0.822  |
+
+
+The following table contains a comparison for the best performing fine-tuned Llama 3.2 (3B), Llama 3.1 (8B) and
+Phi 4 (14B) model
+
+| Model          | Training Set Type | Label Aggregation Type | Accuracy  | Balanced Accuracy | Precision | Recall    |
+|----------------|-------------------|------------------------|-----------|-------------------|-----------|-----------|
+| Llama 3.2 (3B) | Unbalanced        | Default                | 0.878     | 0.859             | 0.717     | 0.822     |
+| Llama 3.1 (8B) | Unbalanced        | Default                | 0.868     | **0.870**         | 0.675     | **0.875** |
+| Phi 4 (14B)    | Unbalanced        | Default                | **0.893** | 0.865             | **0.765** | 0.809     |
