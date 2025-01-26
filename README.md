@@ -86,7 +86,7 @@ Results of the best models from each section on the test set:
 | Model     | Training Set Type | Label Aggregation Type | Accuracy | Balanced Accuracy | Precision | Recall |
 |-----------|-------------------|------------------------|----------|-------------------|-----------|--------|
 | LSTM      | Balanced          | At least one sexist    | 0.743    | 0.713             | 0.682     | 0.593  |
-| HateBERT  | Balanced          | At least one sexist    | 0.781    | 0.777             | 0.689     | 0.762  |
+| HateBERT  | Balanced          | At least one sexist    | 0.790    | 0.742             | 0.833     | 0.551  |
 | Llama 3.2 | Unbalanced        | Default                | 0.878    | 0.859             | 0.717     | 0.822  |
 
 
