@@ -50,3 +50,33 @@ Baseline models offer a solid starting point but have notable limitations. They 
 
 #### Update after the review meeting
 As discussed, the problem of sexism detection is ambiguous and it's worth experimenting with different techniques for aggregating the individual annotations from the 3 annotators. This type of analysis can be found in the `milestone 2/milestone_2.ipynb` under the section `Different methods of aggregation`. Beyond the original labels provided by the dataset creators, we explored the impact of using majority voting and assigning the "sexist" label if at least one annotator marked it as such.
+
+#### Final project phase 
+Projects questions and challenges that we tackled in this phase: 
+- experimenting with different BERT-based models
+- experimenting with different autoregressive models (e.g. LLAMA)
+- making the classifier's decisions explainable to user
+
+All relevant code can be found in the `transformer_models` folder, which includes:
+
+1. `bert_models.py` - contains the `BERTModel` class, which provides methods for initializing, fine-tuning, testing and generating explanations (using SHAP analysis) for decisions of different BERT-based models: DeBERTa, RoBERTa, HateBERT and DistilBERT. Pre-trained models and their tokenizers are sourced from the Hugging Face model repository.
+2. `challenges.ipynb` - a notebook documenting various experiments with BERT-based models.
+    - Firstly, we tested 4 different BERT-based models using our custom PyTorch fine-tuning implementation, as the Hugging Face Trainer API proved more time-consuming.
+    - We then continued to further investigate HateBERT's potential for improvement by training in 6 different scenarios: using combinations of dataset types (balanced/unbalanced) and label aggregation methods (original labels, majority voting, at least one sexist) (section: `Different aggregation methods`). HateBERT trained on the balanced dataset with "at least one sexist" labels emerged as the best-performing model in this phase.
+    - The section `Qualitative analysis of HateBERT model` conducts a SHAP analysis on custom-crafted sentences, aiming to provide us an intuition into how HateBERT makes its decisions and address the challenge of making its predictions transparent and understandable for the end-user.
+    - Finally, in the section `HateBERT vs. RNN`, we performed a comparative analysis of the strengths and weaknesses of these 2 models, both quantitatively and qualitatively.
+
+3. `classification_llama3.1.ipynb`
+4. `classification_llama3.2.ipynb` 
+5. `classification_phi-4.ipynb`
+
+#### Major results
+
+
+Results of the best models from each section on the test set:
+
+| Model     | Training Set Type | Label Aggregation Type | Accuracy | Balanced Accuracy | Precision | Recall  |
+|-----------|-------------------|------------------------|----------|-------------------|-----------|---------|
+| LSTM      | Balanced          | Majority voting        | 0.7428   | 0.7130            | 0.6820    | 0.5927  |
+| HateBERT  | Balanced          | At least one sexist    | 0.7810   | 0.7771            | 0.6891    | 0.7615  |
+| Llama 3.2 |                   |                        |          |                   |           |         |
