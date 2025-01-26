@@ -83,22 +83,22 @@ for the label it has given.
 Detailed `Result` sections can be found in all notebooks. Here, we are showcasing just a selection of them...
 
 Results of the best models from each section on the test set are presented below.
-Note: HateBERT and LSTM performed better with the "at least one sexist" aggregation type, but for comparability with Llama 3.2, the table below displays metrics for the original labels case.
+Note: HateBERT and LSTM performed better with the "at least one sexist" aggregation type, but for comparability with Llama 3.2 (3B), the table below displays metrics for the original labels case.
 
-| Model     | Training Set Type | Label Aggregation Type | Accuracy | Balanced Accuracy | Precision | Recall |
-|-----------|-------------------|------------------------|----------|-------------------|-----------|--------|
-| LSTM      | Balanced          | Default                | 0.728    | 0.694             | 0.665     | 0.558  |
-| HateBERT  | Balanced          | Default                | 0.790    | 0.742             |**0.833**  | 0.551  |
-| Llama 3.2 | Unbalanced        | Default                |**0.878** | **0.859**         | 0.717     |**0.822**|
+| Model          | Training Set Type | Label Aggregation Type | Accuracy  | Balanced Accuracy | Precision | Recall    |
+|----------------|-------------------|------------------------|-----------|-------------------|-----------|-----------|
+| LSTM           | Balanced          | Default                | 0.728     | 0.694             | 0.665     | 0.558     |
+| HateBERT       | Balanced          | Default                | 0.790     | 0.742             | **0.833** | 0.551     |
+| Llama 3.2 (3B) | Unbalanced        | Default                | **0.878** | **0.859**         | 0.717     | **0.822** |
 
 Experimenting with BERT-based models led us to following results. DeBERTa behaved as majority class classifier, which needs further examination. 
 
-| Model       | Training Set Type | Label Aggregation Type | Accuracy | Balanced Accuracy | Precision | Recall |
-|-------------|-------------------|------------------------|----------|-------------------|-----------|--------|
-| RoBERTa     | Unbalanced        | Default                | 0.849    | **0.801**         | 0.684     |**0.708**|
-| DeBERTa     | Unbalanced        | Default                | 0.757    | 0.500             | 0.000     | 0.000  |
-| HateBERT    | Unbalanced        | Default                |**0.862** | 0.786             |**0.758**  | 0.638  |
-| DistilBERT  | Unbalanced        | Default                | 0.836    | 0.747             | 0.699     | 0.574  |
+| Model       | Training Set Type | Label Aggregation Type | Accuracy  | Balanced Accuracy | Precision | Recall    |
+|-------------|-------------------|------------------------|-----------|-------------------|-----------|-----------|
+| RoBERTa     | Unbalanced        | Default                | 0.849     | **0.801**         | 0.684     | **0.708** |
+| DeBERTa     | Unbalanced        | Default                | 0.757     | 0.500             | 0.000     | 0.000     |
+| HateBERT    | Unbalanced        | Default                | **0.862** | 0.786             | **0.758** | 0.638     |
+| DistilBERT  | Unbalanced        | Default                | 0.836     | 0.747             | 0.699     | 0.574     |
 
 The following table contains a comparison for the best performing fine-tuned Llama 3.2 (3B), Llama 3.1 (8B) and
 Phi 4 (14B) model
